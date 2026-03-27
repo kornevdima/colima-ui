@@ -1,0 +1,55 @@
+const { app, BrowserWindow, ipcMain } = require("electron");
+const path = require("path");
+const { config } = require("./lib/config");
+const { createLogger } = require("./lib/logger");
+const { createColimaOperations } = require("./domain/colima/colima-operations");
+const { createDockerOperations } = require("./domain/docker/docker-operations");
+const { createKubernetesOperations } = require("./domain/kubernetes/kubernetes-operations");
+
+const log = createLogger(config.logging);
+const colima = createColimaOperations({ config, log });
+const docker = createDockerOperations({ config, log });
+const kubernetes = createKubernetesOperations({ config, log });
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1080,
+    height: 720,
+    minWidth: 880,
+    minHeight: 520,
+    title: "Colima UI",
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  win.loadFile(path.join(__dirname, "index.html"));
+}
+
+app.whenReady().then(() => {
+  log.info("app.ready", { colimaBin: config.colima.bin, dockerBin: config.docker.bin });
+  createWindow();
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
+});
+
+ipcMain.handle("colima:list", () => colima.listInstances());
+ipcMain.handle("colima:status", (_e, profile) => colima.getStatus(profile));
+ipcMain.handle("colima:start", (_e, options) => colima.start(options ?? {}));
+ipcMain.handle("colima:stop", (_e, options) => colima.stop(options ?? {}));
+ipcMain.handle("colima:version", () => colima.getVersion());
+
+ipcMain.handle("docker:info", () => docker.getInfo());
+ipcMain.handle("docker:ps", (_e, options) => docker.listContainers(options ?? {}));
+ipcMain.handle("docker:images", (_e, options) => docker.listImages(options ?? {}));
+ipcMain.handle("docker:version", () => docker.getVersion());
+
+/** Reserved for UI; returns stub unless `COLIMA_UI_K8S_ENABLED=1`. */
+ipcMain.handle("kubernetes:getNodes", () => kubernetes.getNodes());

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src https://fonts.gstatic.com; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Colima UI</title>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar" aria-label="App navigation">
+        <div class="sidebar-brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <div class="sidebar-title">Colima UI</div>
+            <div class="sidebar-tagline">POC</div>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav" aria-label="Sections">
+          <button type="button" class="nav-item" id="nav-colima" data-nav="colima">
+            Colima
+          </button>
+          <div class="nav-group" role="group" aria-label="Docker">
+            <div class="nav-group-label">Docker</div>
+            <button
+              type="button"
+              class="nav-item nav-item--sub"
+              id="nav-docker-containers"
+              data-nav="docker-containers"
+            >
+              Containers
+            </button>
+            <button
+              type="button"
+              class="nav-item nav-item--sub"
+              id="nav-docker-images"
+              data-nav="docker-images"
+            >
+              Images
+            </button>
+          </div>
+        </nav>
+
+        <div class="sidebar-tools">
+          <label class="field-stacked">
+            <span class="label">Profile</span>
+            <select id="sidebar-profile" aria-label="Colima profile"></select>
+          </label>
+          <button type="button" id="sidebar-refresh" class="btn primary btn-block">
+            Refresh
+          </button>
+        </div>
+
+        <div class="sidebar-foot">
+          <div class="sidebar-foot-label">CLI versions</div>
+          <div id="sidebar-versions" class="sidebar-versions"></div>
+        </div>
+      </aside>
+
+      <div class="main">
+        <p id="status-line" class="status-line" role="status"></p>
+
+        <section
+          id="view-colima"
+          class="view"
+          aria-labelledby="view-colima-heading"
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-colima-heading">Colima</h2>
+              <div class="actions">
+                <button type="button" class="btn" data-colima-action="start">
+                  Start
+                </button>
+                <button type="button" class="btn" data-colima-action="start-k8s">
+                  Start + Kubernetes
+                </button>
+                <button type="button" class="btn danger" data-colima-action="stop">
+                  Stop
+                </button>
+              </div>
+            </div>
+            <pre id="colima-json" class="mono-block" aria-live="polite"></pre>
+          </div>
+        </section>
+
+        <section
+          id="view-docker-containers"
+          class="view view--hidden"
+          aria-labelledby="view-docker-containers-heading"
+          hidden
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-docker-containers-heading">Docker · Containers</h2>
+            </div>
+            <div class="docker-summary" id="docker-summary"></div>
+            <label class="field-stacked field-stacked--spaced">
+              <span class="label"
+                >Filters (<code>docker ps -f</code>, one per line)</span
+              >
+              <textarea
+                id="containers-filter"
+                class="input-textarea"
+                rows="3"
+                spellcheck="false"
+                placeholder="status=running&#10;name=myapp"
+                aria-label="Docker container list filters"
+              ></textarea>
+            </label>
+            <div class="table-wrap">
+              <table class="data-table" id="containers-table">
+                <thead>
+                  <tr>
+                    <th>Container</th>
+                    <th>Image</th>
+                    <th>Status</th>
+                    <th>Ports</th>
+                    <th>Size</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="view-docker-images"
+          class="view view--hidden"
+          aria-labelledby="view-docker-images-heading"
+          hidden
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-docker-images-heading">Docker · Images</h2>
+            </div>
+            <label class="field-stacked field-stacked--spaced">
+              <span class="label"
+                >Filters (<code>docker image ls -f</code>, one per line)</span
+              >
+              <textarea
+                id="images-filter"
+                class="input-textarea"
+                rows="3"
+                spellcheck="false"
+                placeholder="dangling=true&#10;reference=*nginx*"
+                aria-label="Docker image list filters"
+              ></textarea>
+            </label>
+            <div class="docker-summary" id="docker-images-summary"></div>
+            <div class="table-wrap">
+              <table class="data-table" id="images-table">
+                <thead>
+                  <tr>
+                    <th>Repository</th>
+                    <th>Tag</th>
+                    <th>Image ID</th>
+                    <th>Created</th>
+                    <th>Size</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <script type="module" src="renderer/app.js"></script>
+  </body>
+</html>
