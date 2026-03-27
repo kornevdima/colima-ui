@@ -119,7 +119,10 @@ sequenceDiagram
 |---------|---------|-----------|
 | `colima:list` | — | `colima list -j` → `{ ok, code, stdout, stderr, instances[], parseError? }` |
 | `colima:status` | `profile?: string` | `colima status -j [profile]` → `{ ok, code, stdout, stderr, status }` |
-| `colima:start` | `{ profile?, preset?: null \| "kubernetes" }` | `colima start …` long timeout |
+| `colima:start` | `{ profile?, preset?: null \| "kubernetes", startOptions?: { cpu, memoryGiB, diskGiB, runtime, vmType, kubernetesVersion? } }` | `colima start …` long timeout; options merged with env defaults (`lib/config.js`) |
+| `colima:uiDefaults` | — | `{ startDefaults, startKubernetes, templateEditor }` for the Runtime form |
+| `colima:template` | — | `colima template --print` + read file → `{ path, content?, readError? }` |
+| `colima:templateEditInTerminal` | — | Resolves template path, spawns system terminal with `COLIMA_UI_TEMPLATE_EDITOR` + path (default `vim`) |
 | `colima:stop` | `{ profile? }` | `colima stop …` long timeout |
 | `colima:version` | — | `colima version` |
 | `docker:info` | — | `docker info --format '{{json .}}'` → `{ info }` |

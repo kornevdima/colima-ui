@@ -5,7 +5,7 @@ const { createLogger } = require("./lib/logger");
 const { createColimaOperations } = require("./domain/colima/colima-operations");
 const { createDockerOperations } = require("./domain/docker/docker-operations");
 const { createKubernetesOperations } = require("./domain/kubernetes/kubernetes-operations");
-const { launchDockerInTerminal } = require("./lib/terminal-launch");
+const { launchDockerInTerminal, launchEditorInTerminal } = require("./lib/terminal-launch");
 const {
   isValidContainerId,
   isValidDockerImageId,
@@ -77,6 +77,33 @@ ipcMain.handle("colima:status", (_e, profile) => colima.getStatus(profile));
 ipcMain.handle("colima:start", (_e, options) => colima.start(options ?? {}));
 ipcMain.handle("colima:stop", (_e, options) => colima.stop(options ?? {}));
 ipcMain.handle("colima:version", () => colima.getVersion());
+ipcMain.handle("colima:uiDefaults", () => ({
+  startDefaults: { ...config.colima.startDefaults },
+  startKubernetes: { ...config.colima.startKubernetes },
+  templateEditor: config.colima.templateEditor,
+}));
+
+ipcMain.handle("colima:template", () => colima.getTemplate());
+
+ipcMain.handle("colima:templateEditInTerminal", async (event) => {
+  const t = await colima.getTemplate();
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!t.ok || !t.path) {
+    const detail = [t.stderr?.trim(), t.readError].filter(Boolean).join("\n") || "colima template --print failed";
+    if (win) {
+      await dialog.showMessageBox(win, {
+        type: "error",
+        title: "Colima template",
+        message: "Could not resolve the template file path.",
+        detail,
+      });
+    }
+    return { ok: false, detail };
+  }
+  const editor = config.colima.templateEditor;
+  launchEditorInTerminal({ editorBin: editor, filePath: t.path });
+  return { ok: true, path: t.path, editor };
+});
 
 ipcMain.handle("docker:info", () => docker.getInfo());
 ipcMain.handle("docker:ps", (_e, options) => docker.listContainers(options ?? {}));

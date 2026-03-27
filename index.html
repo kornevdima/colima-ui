@@ -38,35 +38,96 @@
         </div>
 
         <nav class="sidebar-nav" aria-label="Sections">
-          <button type="button" class="nav-item" id="nav-colima" data-nav="colima">
-            Colima
-          </button>
-          <div class="nav-group" role="group" aria-label="Docker">
-            <div class="nav-group-label">Docker</div>
+          <div
+            class="nav-accordion nav-accordion--expanded"
+            data-accordion="colima"
+          >
             <button
               type="button"
-              class="nav-item nav-item--sub"
-              id="nav-docker-containers"
-              data-nav="docker-containers"
+              class="nav-group-toggle"
+              id="accordion-colima"
+              data-accordion="colima"
+              aria-expanded="true"
+              aria-controls="nav-colima-items"
             >
-              Containers
+              Colima
             </button>
+            <div
+              id="nav-colima-items"
+              class="nav-group-items"
+              role="group"
+              aria-label="Colima pages"
+            >
+              <button
+                type="button"
+                class="nav-item nav-item--sub"
+                id="nav-colima-runtime"
+                data-nav="colima-runtime"
+              >
+                Runtime
+              </button>
+              <button
+                type="button"
+                class="nav-item nav-item--sub"
+                id="nav-colima-profiles"
+                data-nav="colima-profiles"
+              >
+                Profiles
+              </button>
+              <button
+                type="button"
+                class="nav-item nav-item--sub"
+                id="nav-colima-template"
+                data-nav="colima-template"
+              >
+                Template
+              </button>
+            </div>
+          </div>
+
+          <div class="nav-accordion" data-accordion="docker">
             <button
               type="button"
-              class="nav-item nav-item--sub"
-              id="nav-docker-images"
-              data-nav="docker-images"
+              class="nav-group-toggle"
+              id="accordion-docker"
+              data-accordion="docker"
+              aria-expanded="false"
+              aria-controls="nav-docker-items"
             >
-              Images
+              Docker
             </button>
-            <button
-              type="button"
-              class="nav-item nav-item--sub"
-              id="nav-docker-volumes"
-              data-nav="docker-volumes"
+            <div
+              id="nav-docker-items"
+              class="nav-group-items"
+              role="group"
+              aria-label="Docker pages"
+              hidden
             >
-              Volumes
-            </button>
+              <button
+                type="button"
+                class="nav-item nav-item--sub"
+                id="nav-docker-containers"
+                data-nav="docker-containers"
+              >
+                Containers
+              </button>
+              <button
+                type="button"
+                class="nav-item nav-item--sub"
+                id="nav-docker-images"
+                data-nav="docker-images"
+              >
+                Images
+              </button>
+              <button
+                type="button"
+                class="nav-item nav-item--sub"
+                id="nav-docker-volumes"
+                data-nav="docker-volumes"
+              >
+                Volumes
+              </button>
+            </div>
           </div>
         </nav>
 
@@ -90,13 +151,13 @@
         <p id="status-line" class="status-line" role="status"></p>
 
         <section
-          id="view-colima"
+          id="view-colima-runtime"
           class="view"
-          aria-labelledby="view-colima-heading"
+          aria-labelledby="view-colima-runtime-heading"
         >
           <div class="panel">
             <div class="panel-head">
-              <h2 id="view-colima-heading">Colima</h2>
+              <h2 id="view-colima-runtime-heading">Colima · Runtime</h2>
               <div class="actions">
                 <button type="button" class="btn" data-colima-action="start">
                   Start
@@ -109,7 +170,145 @@
                 </button>
               </div>
             </div>
+            <p class="panel-hint">
+              Start options map to <code>colima start</code> flags. Defaults come from
+              <code>COLIMA_UI_START_*</code> and <code>COLIMA_UI_K8S_*</code> (see
+              <code>lib/config.js</code>). Profile in the sidebar selects
+              <code>-p</code>.
+            </p>
+            <div class="colima-start-grid">
+              <label class="field-inline">
+                <span class="label">CPUs</span>
+                <input
+                  type="number"
+                  id="colima-start-cpu"
+                  class="input-text"
+                  min="1"
+                  max="128"
+                  step="1"
+                  aria-label="Colima start CPU count"
+                />
+              </label>
+              <label class="field-inline">
+                <span class="label">Memory (GiB)</span>
+                <input
+                  type="number"
+                  id="colima-start-memory"
+                  class="input-text"
+                  min="0.5"
+                  max="512"
+                  step="0.5"
+                  aria-label="Colima start memory in GiB"
+                />
+              </label>
+              <label class="field-inline">
+                <span class="label">Disk (GiB)</span>
+                <input
+                  type="number"
+                  id="colima-start-disk"
+                  class="input-text"
+                  min="10"
+                  max="2000"
+                  step="1"
+                  aria-label="Colima start disk in GiB"
+                />
+              </label>
+              <label class="field-inline">
+                <span class="label">Runtime</span>
+                <select id="colima-start-runtime" class="input-select" aria-label="Container runtime">
+                  <option value="docker">docker</option>
+                  <option value="containerd">containerd</option>
+                  <option value="incus">incus</option>
+                </select>
+              </label>
+              <label class="field-inline">
+                <span class="label">VM type</span>
+                <select id="colima-start-vm-type" class="input-select" aria-label="VM type">
+                  <option value="vz">vz</option>
+                  <option value="qemu">qemu</option>
+                  <option value="krunkit">krunkit</option>
+                </select>
+              </label>
+              <label class="field-inline field-inline--wide">
+                <span class="label">K8s version (optional)</span>
+                <input
+                  type="text"
+                  id="colima-k8s-version"
+                  class="input-text"
+                  spellcheck="false"
+                  placeholder="e.g. v1.30.0+k3s1 — only for Start + Kubernetes"
+                  aria-label="Kubernetes version for k3s, optional"
+                />
+              </label>
+            </div>
+            <h3 class="panel-subtitle">Telemetry</h3>
+            <p class="panel-hint panel-hint--tight">
+              <code>colima list -j</code> and <code>colima status -j</code> for the sidebar profile.
+            </p>
             <pre id="colima-json" class="mono-block" aria-live="polite"></pre>
+          </div>
+        </section>
+
+        <section
+          id="view-colima-profiles"
+          class="view view--hidden"
+          aria-labelledby="view-colima-profiles-heading"
+          hidden
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-colima-profiles-heading">Colima · Profiles</h2>
+            </div>
+            <p class="panel-hint">
+              Rows from <code>colima list -j</code>. Use <strong>Refresh</strong> to update;
+              choose the active profile in the sidebar for status in Runtime.
+            </p>
+            <div class="table-wrap">
+              <table class="data-table" id="profiles-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Arch</th>
+                    <th>CPUs</th>
+                    <th>Memory</th>
+                    <th>Disk</th>
+                    <th>Runtime</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="view-colima-template"
+          class="view view--hidden"
+          aria-labelledby="view-colima-template-heading"
+          hidden
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-colima-template-heading">Colima · Template</h2>
+              <div class="actions">
+                <button
+                  type="button"
+                  class="btn"
+                  data-colima-action="template-edit"
+                  title="Opens COLIMA_UI_TEMPLATE_EDITOR (default vim) on the template file"
+                >
+                  Edit in terminal
+                </button>
+              </div>
+            </div>
+            <p class="panel-hint">
+              Default instance template from <code>colima template --print</code>. Use
+              <strong>Refresh</strong> after editing; editor is
+              <code>COLIMA_UI_TEMPLATE_EDITOR</code> (default <code>vim</code>).
+            </p>
+            <p id="colima-template-meta" class="template-meta mono-block mono-block--inline" aria-live="polite"></p>
+            <pre id="colima-template-yaml" class="mono-block template-yaml-block" aria-live="polite"></pre>
           </div>
         </section>
 

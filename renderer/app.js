@@ -1,7 +1,13 @@
 import { $ } from "./utils.js";
 import { refreshAll } from "./refresh.js";
-import { setupSidebar, setActiveNav, showView } from "./sidebar.js";
+import {
+  setupSidebar,
+  setActiveNav,
+  showView,
+  syncAccordionForView,
+} from "./sidebar.js";
 import { wireColimaActions } from "./colima-actions.js";
+import { applyColimaUiDefaultsToForm } from "./colima-view.js";
 import { wireContainerRowContextMenu } from "./containers-context.js";
 import { wireImageRowContextMenu } from "./images-context.js";
 import { wireVolumeRowContextMenu } from "./volumes-context.js";
@@ -31,7 +37,13 @@ function main() {
     document.querySelector("#volumes-table tbody")
   );
   const volumesFilter = /** @type {HTMLTextAreaElement} */ ($("volumes-filter"));
-  const colimaRoot = $("view-colima");
+  const colimaRuntimeRoot = $("view-colima-runtime");
+  const colimaTemplateRoot = $("view-colima-template");
+  const colimaTemplateMeta = $("colima-template-meta");
+  const colimaTemplateYaml = /** @type {HTMLPreElement} */ ($("colima-template-yaml"));
+  const profilesTbody = /** @type {HTMLTableSectionElement} */ (
+    document.querySelector("#profiles-table tbody")
+  );
 
   const els = {
     profileSelect,
@@ -47,6 +59,9 @@ function main() {
     volumesSummary,
     volumesTbody,
     volumesFilter,
+    profilesTbody,
+    colimaTemplateMeta,
+    colimaTemplateYaml,
   };
 
   async function refresh() {
@@ -56,6 +71,7 @@ function main() {
   function navigate(view) {
     setActiveNav(view);
     showView(view);
+    syncAccordionForView(view);
   }
 
   setupSidebar({
@@ -64,24 +80,32 @@ function main() {
   });
 
   wireColimaActions({
-    colimaRoot,
+    colimaRoot: colimaRuntimeRoot,
+    colimaTemplateRoot,
     profileSelect,
     setStatus: (msg, err) => setStatus(statusLine, msg, err),
     refresh,
   });
 
+  const api = window.colimaUi;
+  if (api?.colimaUiDefaults) {
+    api
+      .colimaUiDefaults()
+      .then((d) => applyColimaUiDefaultsToForm(colimaRuntimeRoot, d))
+      .catch(() => {});
+  }
+
   wireContainerRowContextMenu(containersTbody);
   wireImageRowContextMenu(imagesTbody);
   wireVolumeRowContextMenu(volumesTbody);
 
-  const api = window.colimaUi;
   if (api?.onDockerMutation) {
     api.onDockerMutation(() => {
       refresh().catch(() => {});
     });
   }
 
-  navigate("colima");
+  navigate("colima-runtime");
   refresh();
 }
 

@@ -1,4 +1,9 @@
-import { fillProfileSelect, renderColimaTelemetry } from "./colima-view.js";
+import {
+  fillProfileSelect,
+  renderColimaTelemetry,
+  renderColimaTemplate,
+  renderProfilesTable,
+} from "./colima-view.js";
 import {
   renderDockerSummary,
   renderContainersTable,
@@ -25,6 +30,9 @@ import {
  *   volumesSummary: HTMLElement;
  *   volumesTbody: HTMLTableSectionElement;
  *   volumesFilter: HTMLTextAreaElement;
+ *   profilesTbody: HTMLTableSectionElement;
+ *   colimaTemplateMeta: HTMLElement;
+ *   colimaTemplateYaml: HTMLPreElement;
  * }} els
  */
 export async function refreshAll(api, els) {
@@ -41,13 +49,14 @@ export async function refreshAll(api, els) {
   const containerFilterLines = parseFilterLines(els.containersFilter.value);
   const volumeFilterLines = parseFilterLines(els.volumesFilter.value);
 
-  const [listRes, infoRes, psRes, imagesRes, volumesRes, colimaVer, dockerVer] =
+  const [listRes, infoRes, psRes, imagesRes, volumesRes, templateRes, colimaVer, dockerVer] =
     await Promise.all([
       api.colimaList(),
       api.dockerInfo(),
       api.dockerPs({ filters: containerFilterLines }),
       api.dockerImages({ filters: imageFilterLines }),
       api.dockerVolumes({ filters: volumeFilterLines }),
+      api.colimaTemplate ? api.colimaTemplate() : Promise.resolve(null),
       api.colimaVersion(),
       api.dockerVersion(),
     ]);
@@ -57,6 +66,8 @@ export async function refreshAll(api, els) {
   const statusRes = await api.colimaStatus(profile);
 
   renderColimaTelemetry(els.colimaPre, listRes, statusRes);
+  renderProfilesTable(els.profilesTbody, listRes.instances || []);
+  renderColimaTemplate(els.colimaTemplateMeta, els.colimaTemplateYaml, templateRes);
   renderDockerSummary(els.dockerSummary, infoRes.info);
   renderContainersTable(els.containersTbody, psRes.containers || []);
   renderImagesSummary(els.imagesSummary, imagesRes.images || [], imageFilterLines);
@@ -88,6 +99,9 @@ export async function refreshAll(api, els) {
     issues.push(`docker image ls: ${imagesRes.stderr.trim()}`);
   if (!volumesRes.ok && volumesRes.stderr)
     issues.push(`docker volume ls: ${volumesRes.stderr.trim()}`);
+  if (templateRes && !templateRes.ok && templateRes.stderr)
+    issues.push(`colima template --print: ${templateRes.stderr.trim()}`);
+  else if (templateRes?.readError) issues.push(`template file: ${templateRes.readError}`);
 
   if (issues.length) {
     els.statusLine.textContent = `Refreshed with warnings — ${issues[0]}`;

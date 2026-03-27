@@ -1,9 +1,13 @@
-import { setColimaActionsDisabled } from "./colima-view.js";
+import {
+  setColimaActionsDisabled,
+  readColimaStartOptionsFromForm,
+} from "./colima-view.js";
 import { setSidebarRefreshBusy } from "./sidebar.js";
 
 /**
  * @param {{
  *   colimaRoot: HTMLElement;
+ *   colimaTemplateRoot?: HTMLElement | null;
  *   profileSelect: HTMLSelectElement;
  *   setStatus: (msg: string, isError?: boolean) => void;
  *   refresh: () => Promise<void>;
@@ -16,6 +20,9 @@ export function wireColimaActions(ctx) {
   function setGlobalBusy(busy) {
     setSidebarRefreshBusy(busy);
     setColimaActionsDisabled(ctx.colimaRoot, busy);
+    if (ctx.colimaTemplateRoot) {
+      setColimaActionsDisabled(ctx.colimaTemplateRoot, busy);
+    }
   }
 
   async function runAction(label, fn) {
@@ -39,13 +46,17 @@ export function wireColimaActions(ctx) {
 
   ctx.colimaRoot.querySelector('[data-colima-action="start"]')?.addEventListener("click", () => {
     const profile = ctx.profileSelect.value || undefined;
-    runAction("Start Colima", () => api.colimaStart({ profile, preset: null }));
+    const startOptions = readColimaStartOptionsFromForm(ctx.colimaRoot);
+    runAction("Start Colima", () =>
+      api.colimaStart({ profile, preset: null, startOptions })
+    );
   });
 
   ctx.colimaRoot.querySelector('[data-colima-action="start-k8s"]')?.addEventListener("click", () => {
     const profile = ctx.profileSelect.value || undefined;
+    const startOptions = readColimaStartOptionsFromForm(ctx.colimaRoot);
     runAction("Start Colima with Kubernetes", () =>
-      api.colimaStart({ profile, preset: "kubernetes" })
+      api.colimaStart({ profile, preset: "kubernetes", startOptions })
     );
   });
 
@@ -53,4 +64,23 @@ export function wireColimaActions(ctx) {
     const profile = ctx.profileSelect.value || undefined;
     runAction("Stop Colima", () => api.colimaStop({ profile }));
   });
+
+  ctx.colimaTemplateRoot
+    ?.querySelector('[data-colima-action="template-edit"]')
+    ?.addEventListener("click", async () => {
+      if (!api.colimaTemplateEditInTerminal) return;
+      ctx.setStatus("Opening template in terminal…");
+      try {
+        const r = await api.colimaTemplateEditInTerminal();
+        if (r?.ok) {
+          ctx.setStatus(
+            `Opened ${r.editor ?? "editor"} on template${r.path ? ` (${r.path})` : ""}.`
+          );
+        } else {
+          ctx.setStatus(r?.detail || "Could not open template editor.", true);
+        }
+      } catch (e) {
+        ctx.setStatus(`Template editor error: ${e}`, true);
+      }
+    });
 }
