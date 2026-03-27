@@ -3,6 +3,7 @@ import { refreshAll } from "./refresh.js";
 import { setupSidebar, setActiveNav, showView } from "./sidebar.js";
 import { wireColimaActions } from "./colima-actions.js";
 import { wireContainerRowContextMenu } from "./containers-context.js";
+import { wireImageRowContextMenu } from "./images-context.js";
 
 function setStatus(el, message, isError) {
   el.textContent = message;
@@ -61,6 +62,14 @@ function main() {
   });
 
   wireContainerRowContextMenu(containersTbody);
+  wireImageRowContextMenu(imagesTbody);
+
+  const api = window.colimaUi;
+  if (api?.onDockerMutation) {
+    api.onDockerMutation(() => {
+      refresh().catch(() => {});
+    });
+  }
 
   navigate("colima");
   refresh();

@@ -529,3 +529,11 @@ select {
   background: rgba(255, 255, 255, 0.03);
 }
 
+#images-table tbody tr.image-row {
+  cursor: context-menu;
+}
+
+#images-table tbody tr.image-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+

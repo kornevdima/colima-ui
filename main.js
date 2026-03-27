@@ -1,16 +1,41 @@
-const { app, BrowserWindow, ipcMain, Menu } = require("electron");
+const { app, BrowserWindow, ipcMain, Menu, dialog, shell } = require("electron");
 const path = require("path");
 const { config } = require("./lib/config");
 const { createLogger } = require("./lib/logger");
 const { createColimaOperations } = require("./domain/colima/colima-operations");
 const { createDockerOperations } = require("./domain/docker/docker-operations");
 const { createKubernetesOperations } = require("./domain/kubernetes/kubernetes-operations");
-const { launchDockerInTerminal, isValidContainerId } = require("./lib/terminal-launch");
+const { launchDockerInTerminal } = require("./lib/terminal-launch");
+const { isValidContainerId, isValidDockerImageId } = require("./lib/docker-identifiers");
 
 const log = createLogger(config.logging);
 const colima = createColimaOperations({ config, log });
 const docker = createDockerOperations({ config, log });
 const kubernetes = createKubernetesOperations({ config, log });
+
+function sendDockerMutation(win) {
+  if (win && !win.isDestroyed()) {
+    win.webContents.send("docker:mutation");
+  }
+}
+
+/** @param {unknown} list */
+function sanitizeBrowserUrlsForOpen(list) {
+  if (!Array.isArray(list)) return [];
+  const out = [];
+  for (const u of list) {
+    if (typeof u !== "string") continue;
+    try {
+      const p = new URL(u);
+      if (p.protocol !== "http:" && p.protocol !== "https:") continue;
+      if (!p.hostname) continue;
+      out.push(u);
+    } catch {
+      /* ignore */
+    }
+  }
+  return [...new Set(out)];
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -54,9 +79,9 @@ ipcMain.handle("docker:images", (_e, options) => docker.listImages(options ?? {}
 ipcMain.handle("docker:version", () => docker.getVersion());
 
 /**
- * Native context menu for a container row; actions open the system terminal (no in-app PTY).
+ * Native context menu for a container row; attach/exec use the system terminal; remove runs `docker rm -f`.
  * @param {Electron.IpcMainInvokeEvent} event
- * @param {{ containerId?: string; x?: number; y?: number }} payload — x/y = client/content DIP (from `clientX`/`clientY`)
+ * @param {{ containerId?: string; browserUrls?: string[]; x?: number; y?: number }} payload — x/y = client/content DIP (from `clientX`/`clientY`)
  */
 ipcMain.handle("containers:contextMenu", (event, payload) => {
   const id = String(payload?.containerId ?? "").trim();
@@ -67,6 +92,8 @@ ipcMain.handle("containers:contextMenu", (event, payload) => {
   if (!win) return;
 
   const dockerBin = config.docker.bin;
+  const browserUrls = sanitizeBrowserUrlsForOpen(payload?.browserUrls);
+
   const template = [
     {
       label: "Attach in Terminal",
@@ -83,6 +110,93 @@ ipcMain.handle("containers:contextMenu", (event, payload) => {
           dockerBin,
           dockerArgs: ["exec", "-it", id, "/bin/sh"],
         }),
+    },
+  ];
+
+  if (browserUrls.length > 0) {
+    template.push({
+      label: "Open in browser",
+      submenu: browserUrls.map((url) => ({
+        label: url.replace(/^https?:\/\//, ""),
+        click: () => shell.openExternal(url),
+      })),
+    });
+  }
+
+  template.push(
+    { type: "separator" },
+    {
+      label: "Remove container…",
+      click: async () => {
+        const { response } = await dialog.showMessageBox(win, {
+          type: "warning",
+          buttons: ["Cancel", "Remove"],
+          defaultId: 0,
+          cancelId: 0,
+          message: "Remove this container?",
+          detail: `Runs: docker rm -f\n\nID: ${id}`,
+        });
+        if (response !== 1) return;
+        const r = await docker.removeContainer(id);
+        if (r.ok) {
+          sendDockerMutation(win);
+        } else {
+          await dialog.showMessageBox(win, {
+            type: "error",
+            title: "docker rm failed",
+            message: r.stderr?.trim() || `Exit code ${r.code ?? "?"}`,
+          });
+        }
+      },
+    }
+  );
+
+  const menu = Menu.buildFromTemplate(template);
+  const popupOpts = { window: win };
+  const x = Number(payload?.x);
+  const y = Number(payload?.y);
+  if (Number.isFinite(x) && Number.isFinite(y)) {
+    popupOpts.x = Math.round(x);
+    popupOpts.y = Math.round(y);
+  }
+  menu.popup(popupOpts);
+});
+
+/**
+ * Native context menu for an image row; remove runs `docker rmi -f`.
+ */
+ipcMain.handle("images:contextMenu", (event, payload) => {
+  const imageId = String(payload?.imageId ?? "").trim();
+  if (!isValidDockerImageId(imageId)) {
+    return;
+  }
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return;
+
+  const template = [
+    {
+      label: "Remove image…",
+      click: async () => {
+        const { response } = await dialog.showMessageBox(win, {
+          type: "warning",
+          buttons: ["Cancel", "Remove"],
+          defaultId: 0,
+          cancelId: 0,
+          message: "Remove this image?",
+          detail: `Runs: docker rmi -f\n\nID: ${imageId}`,
+        });
+        if (response !== 1) return;
+        const r = await docker.removeImage(imageId);
+        if (r.ok) {
+          sendDockerMutation(win);
+        } else {
+          await dialog.showMessageBox(win, {
+            type: "error",
+            title: "docker rmi failed",
+            message: r.stderr?.trim() || `Exit code ${r.code ?? "?"}`,
+          });
+        }
+      },
     },
   ];
 

@@ -72,6 +72,7 @@ export function renderContainersTable(tbodyEl, containers) {
       tr.dataset.containerId = cid;
       tr.classList.add("container-row");
     }
+    tr.dataset.containerPorts = String(c.Ports ?? "");
     const name = (c.Names || "").replace(/^\//, "") || c.ID?.slice(0, 12) || "—";
     const ports = c.Ports || "—";
     const size = c.Size ?? "—";
@@ -134,6 +135,11 @@ export function renderImagesTable(tbodyEl, images) {
   }
   for (const img of images) {
     const tr = document.createElement("tr");
+    const rawImageId = String(img.ID ?? img.Id ?? "").trim();
+    if (rawImageId && rawImageId !== "—") {
+      tr.dataset.imageId = rawImageId;
+      tr.classList.add("image-row");
+    }
     const repo = img.Repository ?? "—";
     const tag = img.Tag ?? "—";
     const id = img.ID ?? img.Id ?? "—";

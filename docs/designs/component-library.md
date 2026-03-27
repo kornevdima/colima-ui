@@ -181,7 +181,10 @@ Each major section is a `<section class="view">`. Hidden views use `**.view--hid
 | -------------------- | ------------------------------------------------------------------- |
 | `data-colima-action` | `start` | `start-k8s` | `stop` — wired in `colima-actions.js`       |
 | `data-nav`           | Present on nav buttons for clarity; routing uses `id` prefix `nav-` |
-| `data-container-id`  | Full container ID on **Containers** table rows → context menu → external terminal |
+| `data-container-id`  | Full container ID → context menu (terminal attach/exec, **remove**)              |
+| `data-container-ports` | Raw **Ports** cell for parsing **http://** URLs (published bindings)         |
+| `data-image-id`      | Image ID / digest → context menu (**remove** → `docker rmi -f`)                     |
+| `onDockerMutation`   | Preload subscription: main sends **`docker:mutation`** after rm/rmi → refresh UI    |
 
 
 ---

@@ -103,10 +103,22 @@ function createDockerOperations(deps) {
     });
   }
 
+  async function removeContainer(containerId) {
+    log.info("docker.removeContainer", { id: String(containerId).slice(0, 14) });
+    return runBinary(bin, ["rm", "-f", containerId], { timeoutMs: short });
+  }
+
+  async function removeImage(imageId) {
+    log.info("docker.removeImage", { id: String(imageId).slice(0, 22) });
+    return runBinary(bin, ["rmi", "-f", imageId], { timeoutMs: short });
+  }
+
   return {
     getInfo,
     listContainers,
     listImages,
+    removeContainer,
+    removeImage,
     getVersion,
   };
 }

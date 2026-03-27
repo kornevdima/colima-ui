@@ -121,4 +121,18 @@ Records use **DD-** ids for traceability in PRs and issues. They do not replace 
 
 ---
 
+### DD-014 — Remove container / image from context menu
+
+- **Context:** Users need to drop resources without leaving the app for a raw terminal.
+- **Decision:** After confirmation (**Electron `dialog`**), main runs **`docker rm -f`** / **`docker rmi -f`** via **`domain/docker`**; on success emits **`docker:mutation`** so the renderer **refreshes**. Attach/exec stay external-terminal only.
+- **Consequences:** **`-f`** can stop running containers / untag images in use; errors show a second dialog with stderr.
+
+### DD-015 — Open published ports in browser
+
+- **Context:** Containers expose HTTP on `0.0.0.0:port` / `[::]:port` etc.; users want one click from the row.
+- **Decision:** Store raw **`Ports`** on **`data-container-ports`**; **`renderer/docker-ports.js`** parses host-side bindings (`…->…/tcp`), builds **`http://`** URLs (literal **`0.0.0.0`** when Docker reports it; **`::`** → **`localhost`**); **dedupe by numeric port** so IPv4+IPv6 duplicates share one menu item; main validates with **`URL`** and **`shell.openExternal`**.
+- **Consequences:** Only **http** (not https) unless we extend later; internal-only hosts may not resolve in the browser.
+
+---
+
 When you add a meaningful UX or visual choice, append a new **DD-** row (or short subsection) here and, if needed, a row in [component-library.md](./component-library.md).

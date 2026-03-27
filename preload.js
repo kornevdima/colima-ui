@@ -13,4 +13,18 @@ contextBridge.exposeInMainWorld("colimaUi", {
   kubernetesGetNodes: () => ipcRenderer.invoke("kubernetes:getNodes"),
   openContainerContextMenu: (payload) =>
     ipcRenderer.invoke("containers:contextMenu", payload ?? {}),
+  openImageContextMenu: (payload) =>
+    ipcRenderer.invoke("images:contextMenu", payload ?? {}),
+  onDockerMutation: (callback) => {
+    const channel = "docker:mutation";
+    const handler = () => {
+      try {
+        callback();
+      } catch {
+        /* ignore */
+      }
+    };
+    ipcRenderer.on(channel, handler);
+    return () => ipcRenderer.removeListener(channel, handler);
+  },
 });

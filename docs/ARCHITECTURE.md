@@ -81,8 +81,9 @@ No separate backend service or database in the POC.
 | **Logger** | `lib/logger.js` | Structured stdout logs from main |
 | **CLI runner** | `lib/cli.js` | `execFile` wrapper only (no domain parsing) |
 | **Terminal launch** | `lib/terminal-launch.js` | OS-specific spawn of Terminal / cmd / `x-terminal-emulator` for docker CLI |
+| **ID validation** | `lib/docker-identifiers.js` | Container / image IDs before context-menu mutations |
 | **Colima domain** | `domain/colima/colima-operations.js` | Colima use-cases |
-| **Docker domain** | `domain/docker/docker-operations.js` | Docker use-cases |
+| **Docker domain** | `domain/docker/docker-operations.js` | Docker use-cases (list, remove container/image) |
 | **Kubernetes domain** | `domain/kubernetes/kubernetes-operations.js` | Future kubectl use-cases |
 | **Preload** | `preload.js` | `colimaUi.*` → `ipcRenderer.invoke` |
 | **Renderer** | `renderer/app.js` (ES module entry) | Compose sidebar navigation, refresh, Colima actions |
@@ -125,7 +126,9 @@ sequenceDiagram
 | `docker:ps` | `{ filters?: string[] }` | `docker ps -a …` + `-f` per line → `{ containers[] }` |
 | `docker:images` | `{ filters?: string[] }` | `docker image ls -a …` + one `-f` per `key=value` line → `{ images[] }` |
 | `docker:version` | — | `docker version --format '{{json .}}'` |
-| `containers:contextMenu` | `{ containerId, x?, y? }` | Shows native **Menu**; actions call `lib/terminal-launch.js` (no in-app PTY) |
+| `containers:contextMenu` | `{ containerId, browserUrls?, x?, y? }` | Native **Menu**: attach/exec → terminal; **Open in browser** → `shell.openExternal` (parsed published ports); **Remove** → `docker rm -f` → **`docker:mutation`** |
+| `images:contextMenu` | `{ imageId, x?, y? }` | Native **Menu**: **Remove image** → confirm → `docker rmi -f` → **`docker:mutation`** |
+| *(main → renderer)* `docker:mutation` | — | Fired after successful **rm** / **rmi** so UI can **refresh** lists |
 | `kubernetes:getNodes` | — | If `COLIMA_UI_K8S_ENABLED=1`: `kubectl get nodes -o json`; else `{ notImplemented: true, … }` |
 
 All responses include at least `{ ok, code, stdout, stderr }` from `runBinary` unless noted; parsers may add fields.
