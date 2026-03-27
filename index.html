@@ -127,6 +127,14 @@
               >
                 Volumes
               </button>
+              <button
+                type="button"
+                class="nav-item nav-item--sub"
+                id="nav-docker-networks"
+                data-nav="docker-networks"
+              >
+                Networks
+              </button>
             </div>
           </div>
         </nav>
@@ -434,6 +442,50 @@
                     <th>Driver</th>
                     <th>Scope</th>
                     <th>Mountpoint</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="view-docker-networks"
+          class="view view--hidden"
+          aria-labelledby="view-docker-networks-heading"
+          hidden
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-docker-networks-heading">Docker · Networks</h2>
+            </div>
+            <label class="field-stacked field-stacked--spaced">
+              <span class="label"
+                >Filters (<code>docker network ls -f</code>, one per line)</span
+              >
+              <textarea
+                id="networks-filter"
+                class="input-textarea"
+                rows="3"
+                spellcheck="false"
+                placeholder="driver=bridge&#10;name=my_net"
+                aria-label="Docker network list filters"
+              ></textarea>
+            </label>
+            <div class="docker-summary" id="docker-networks-summary"></div>
+            <div class="table-wrap">
+              <table class="data-table" id="networks-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>ID</th>
+                    <th>Driver</th>
+                    <th>Scope</th>
+                    <th>IPv4</th>
+                    <th>IPv6</th>
+                    <th>Internal</th>
+                    <th>Labels</th>
                   </tr>
                 </thead>
                 <tbody></tbody>

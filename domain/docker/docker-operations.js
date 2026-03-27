@@ -1,5 +1,5 @@
 /**
- * Domain: Docker engine visibility (info, containers, images, volumes, version).
+ * Domain: Docker engine visibility (info, containers, images, volumes, networks, version).
  * Separate bounded context from Colima; uses the Docker CLI as an attachable resource.
  */
 
@@ -144,11 +144,38 @@ function createDockerOperations(deps) {
     return runBinary(bin, ["volume", "rm", "-f", volumeName], { timeoutMs: short });
   }
 
+  /**
+   * `docker network ls` with optional `-f` filters.
+   * @param {{ filters?: string[] }} [options]
+   */
+  async function listNetworks(options = {}) {
+    const raw = options.filters;
+    const filters = Array.isArray(raw) ? raw : [];
+    const args = ["network", "ls", "--no-trunc", "--format", "{{json .}}"];
+    args.push(...expandDockerFilterArgs(filters));
+    log.debug("docker.listNetworks", { bin, filterCount: filters.length });
+    const r = await runBinary(bin, args, { timeoutMs: short });
+    const lines = r.stdout
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const networks = [];
+    for (const line of lines) {
+      try {
+        networks.push(JSON.parse(line));
+      } catch {
+        /* skip bad line */
+      }
+    }
+    return { ...r, networks };
+  }
+
   return {
     getInfo,
     listContainers,
     listImages,
     listVolumes,
+    listNetworks,
     removeContainer,
     removeImage,
     removeVolume,

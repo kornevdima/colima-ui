@@ -38,6 +38,11 @@ function main() {
     document.querySelector("#volumes-table tbody")
   );
   const volumesFilter = /** @type {HTMLTextAreaElement} */ ($("volumes-filter"));
+  const networksSummary = $("docker-networks-summary");
+  const networksTbody = /** @type {HTMLTableSectionElement} */ (
+    document.querySelector("#networks-table tbody")
+  );
+  const networksFilter = /** @type {HTMLTextAreaElement} */ ($("networks-filter"));
   const colimaRuntimeRoot = $("view-colima-runtime");
   const colimaTemplateRoot = $("view-colima-template");
   const colimaTemplateMeta = $("colima-template-meta");
@@ -65,6 +70,9 @@ function main() {
     volumesSummary,
     volumesTbody,
     volumesFilter,
+    networksSummary,
+    networksTbody,
+    networksFilter,
     profilesTbody,
     colimaTemplateMeta,
     colimaTemplateYaml,

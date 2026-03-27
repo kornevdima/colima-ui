@@ -35,7 +35,7 @@ Separate **domain** modules keep Colima lifecycle, Docker visibility, and Kubern
 | Domain | Module | Responsibility |
 |--------|--------|------------------|
 | **Colima** | `domain/colima/colima-operations.js` | Instance list, status, start/stop, version; parses `colima list -j` |
-| **Docker** | `domain/docker/docker-operations.js` | Engine info, container/image/volume lists, version |
+| **Docker** | `domain/docker/docker-operations.js` | Engine info, container/image/volume/network lists, version |
 | **Kubernetes** | `domain/kubernetes/kubernetes-operations.js` | Reserved; `getNodes()` is a stub unless `COLIMA_UI_K8S_ENABLED=1` |
 
 Cross-domain rules: **no** imports between `domain/colima`, `domain/docker`, and `domain/kubernetes`. Shared infrastructure lives under `lib/`.
@@ -84,7 +84,7 @@ No separate backend service or database in the POC.
 | **Terminal launch** | `lib/terminal-launch.js` | OS-specific spawn of Terminal / cmd / `x-terminal-emulator` for docker CLI |
 | **ID validation** | `lib/docker-identifiers.js` | Container / image IDs / volume names before context-menu mutations |
 | **Colima domain** | `domain/colima/colima-operations.js` | Colima use-cases |
-| **Docker domain** | `domain/docker/docker-operations.js` | Docker use-cases (list, remove container/image/volume) |
+| **Docker domain** | `domain/docker/docker-operations.js` | Docker use-cases (list networks; list/remove container/image/volume) |
 | **Kubernetes domain** | `domain/kubernetes/kubernetes-operations.js` | Future kubectl use-cases |
 | **Preload** | `preload.js` | `colimaUi.*` → `ipcRenderer.invoke` |
 | **Renderer** | `renderer/app.js` (ES module entry) | Compose sidebar navigation, refresh, Colima actions |
@@ -130,6 +130,7 @@ sequenceDiagram
 | `docker:ps` | `{ filters?: string[] }` | `docker ps -a …` + `-f` per line → `{ containers[] }` |
 | `docker:images` | `{ filters?: string[] }` | `docker image ls -a …` + one `-f` per `key=value` line → `{ images[] }` |
 | `docker:volumes` | `{ filters?: string[] }` | `docker volume ls …` + `-f` per line → `{ volumes[] }` |
+| `docker:networks` | `{ filters?: string[] }` | `docker network ls --no-trunc …` + `-f` per line → `{ networks[] }` |
 | `docker:version` | — | `docker version --format '{{json .}}'` |
 | `containers:contextMenu` | `{ containerId, browserUrls?, x?, y? }` | Native **Menu**: attach/exec/**tail logs** (`docker logs -f --tail 200`) → terminal; **Open in browser** → `shell.openExternal` (parsed published ports); **Remove** → `docker rm -f` → **`docker:mutation`** |
 | `images:contextMenu` | `{ imageId, x?, y? }` | Native **Menu**: **Remove image** → confirm → `docker rmi -f` → **`docker:mutation`** |

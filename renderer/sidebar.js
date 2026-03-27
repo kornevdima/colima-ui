@@ -5,6 +5,7 @@ const VIEWS = [
   "docker-containers",
   "docker-images",
   "docker-volumes",
+  "docker-networks",
   "app-logs",
 ];
 
@@ -15,6 +16,7 @@ const VIEW_TO_GROUP = {
   "docker-containers": "docker",
   "docker-images": "docker",
   "docker-volumes": "docker",
+  "docker-networks": "docker",
 };
 
 const GROUPS = ["colima", "docker"];

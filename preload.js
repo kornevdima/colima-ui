@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld("colimaUi", {
   dockerPs: (options) => ipcRenderer.invoke("docker:ps", options ?? {}),
   dockerImages: (options) => ipcRenderer.invoke("docker:images", options ?? {}),
   dockerVolumes: (options) => ipcRenderer.invoke("docker:volumes", options ?? {}),
+  dockerNetworks: (options) => ipcRenderer.invoke("docker:networks", options ?? {}),
   dockerVersion: () => ipcRenderer.invoke("docker:version"),
   kubernetesGetNodes: () => ipcRenderer.invoke("kubernetes:getNodes"),
   openContainerContextMenu: (payload) =>

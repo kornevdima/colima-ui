@@ -203,6 +203,63 @@ export function renderVolumesTable(tbodyEl, volumes) {
   }
 }
 
+export function renderNetworksSummary(rootEl, networks, filterLines) {
+  rootEl.innerHTML = "";
+  const n = networks.length;
+  const drivers = new Set(networks.map((x) => String(x.Driver ?? "")).filter(Boolean));
+  const filterNote =
+    filterLines.length > 0 ? filterLines.join("; ") : "—";
+  const rows = [
+    ["Networks listed", n],
+    ["Unique drivers", drivers.size],
+    ["Active filters", filterNote],
+  ];
+  for (const [k, v] of rows) {
+    const wrap = document.createElement("div");
+    wrap.className = "kv";
+    wrap.innerHTML = `<div class="k">${escapeHtml(k)}</div><div class="v">${escapeHtml(
+      String(v ?? "—")
+    )}</div>`;
+    rootEl.appendChild(wrap);
+  }
+}
+
+function truncateCell(s, max) {
+  const t = String(s ?? "");
+  if (t.length <= max) return t;
+  return `${t.slice(0, max)}…`;
+}
+
+export function renderNetworksTable(tbodyEl, networks) {
+  tbodyEl.innerHTML = "";
+  if (!networks.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td colspan="8" class="empty">No networks (or Docker unavailable / filters excluded all).</td>';
+    tbodyEl.appendChild(tr);
+    return;
+  }
+  for (const x of networks) {
+    const tr = document.createElement("tr");
+    const name = String(x.Name ?? "—");
+    const id = String(x.ID ?? "—");
+    const driver = String(x.Driver ?? "—");
+    const scope = String(x.Scope ?? "—");
+    const ipv4 = String(x.IPv4 ?? "—");
+    const ipv6 = String(x.IPv6 ?? "—");
+    const internal = String(x.Internal ?? "—");
+    const labels = truncateCell(x.Labels ?? "", 72);
+    tr.innerHTML = `<td>${escapeHtml(name)}</td><td>${escapeHtml(
+      id
+    )}</td><td>${escapeHtml(driver)}</td><td>${escapeHtml(
+      scope
+    )}</td><td>${escapeHtml(ipv4)}</td><td>${escapeHtml(ipv6)}</td><td>${escapeHtml(
+      internal
+    )}</td><td title="${escapeHtml(String(x.Labels ?? ""))}">${escapeHtml(labels)}</td>`;
+    tbodyEl.appendChild(tr);
+  }
+}
+
 /** Lines passed to `docker * ls -f` (one key=value per line). */
 export function parseFilterLines(text) {
   return String(text || "")

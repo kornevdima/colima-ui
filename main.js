@@ -137,6 +137,7 @@ ipcMain.handle("docker:info", () => docker.getInfo());
 ipcMain.handle("docker:ps", (_e, options) => docker.listContainers(options ?? {}));
 ipcMain.handle("docker:images", (_e, options) => docker.listImages(options ?? {}));
 ipcMain.handle("docker:volumes", (_e, options) => docker.listVolumes(options ?? {}));
+ipcMain.handle("docker:networks", (_e, options) => docker.listNetworks(options ?? {}));
 ipcMain.handle("docker:version", () => docker.getVersion());
 
 /**
