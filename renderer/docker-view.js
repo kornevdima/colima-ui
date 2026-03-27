@@ -79,13 +79,13 @@ export function renderContainersTable(tbodyEl, containers) {
     const chip = containerStatusChipMeta(c);
     tr.innerHTML = `<td>${escapeHtml(name)}</td><td>${escapeHtml(
       String(c.Image || "—")
-    )}</td><td class="td-status"><span class="status-chip status-chip--${
+    )}</td><td class="td-status"><div class="status-cell"><span class="status-chip status-chip--${
       chip.mod
     }" title="${escapeHtml(chip.title)}">${escapeHtml(
       chip.label
     )}</span><span class="status-detail">${escapeHtml(
       status
-    )}</span></td><td>${escapeHtml(String(ports))}</td><td>${escapeHtml(
+    )}</span></div></td><td>${escapeHtml(String(ports))}</td><td>${escapeHtml(
       String(size)
     )}</td>`;
     tbodyEl.appendChild(tr);

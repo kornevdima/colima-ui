@@ -58,7 +58,7 @@ Each major section is a `<section class="view">`. Hidden views use `**.view--hid
 
 | Element   | Class              | Usage                                |
 | --------- | ------------------ | ------------------------------------ |
-| Logo tile | `.brand-mark`      | Decorative square; gradient + shadow |
+| Logo      | `.brand-logo`      | `logo-colima.png`; rounded, `object-fit: contain` |
 | Title     | `.sidebar-title`   | App name                             |
 | Subtitle  | `.sidebar-tagline` | e.g. “POC”; uppercase small caps     |
 
@@ -165,7 +165,8 @@ Each major section is a `<section class="view">`. Hidden views use `**.view--hid
 | `.data-table`           | Full width table                                      |
 | `.data-table th`        | Uppercase header row                                  |
 | `.data-table td`        | Mono body (except **Status** column)                  |
-| `.data-table .td-status`| Column with **`.status-chip`** + **`.status-detail`** |
+| `.data-table .td-status` | Status column `<td>` (normal table-cell)                    |
+| `.status-cell`           | Inner flex wrapper for chip + detail (avoids flex on `td`) |
 | `.status-chip`          | Pill; **`.status-chip--running`** is green accent     |
 | `.status-detail`        | Full `docker ps` status line (muted mono)            |
 | `.data-table .empty`   | Single placeholder row (sans)                         |

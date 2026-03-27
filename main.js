@@ -19,6 +19,7 @@ function createWindow() {
     minWidth: 880,
     minHeight: 520,
     title: "Colima UI",
+    icon: path.join(__dirname, "logo-colima.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
