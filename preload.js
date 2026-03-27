@@ -9,12 +9,15 @@ contextBridge.exposeInMainWorld("colimaUi", {
   dockerInfo: () => ipcRenderer.invoke("docker:info"),
   dockerPs: (options) => ipcRenderer.invoke("docker:ps", options ?? {}),
   dockerImages: (options) => ipcRenderer.invoke("docker:images", options ?? {}),
+  dockerVolumes: (options) => ipcRenderer.invoke("docker:volumes", options ?? {}),
   dockerVersion: () => ipcRenderer.invoke("docker:version"),
   kubernetesGetNodes: () => ipcRenderer.invoke("kubernetes:getNodes"),
   openContainerContextMenu: (payload) =>
     ipcRenderer.invoke("containers:contextMenu", payload ?? {}),
   openImageContextMenu: (payload) =>
     ipcRenderer.invoke("images:contextMenu", payload ?? {}),
+  openVolumeContextMenu: (payload) =>
+    ipcRenderer.invoke("volumes:contextMenu", payload ?? {}),
   onDockerMutation: (callback) => {
     const channel = "docker:mutation";
     const handler = () => {

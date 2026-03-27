@@ -1,4 +1,4 @@
-const VIEWS = ["colima", "docker-containers", "docker-images"];
+const VIEWS = ["colima", "docker-containers", "docker-images", "docker-volumes"];
 
 /**
  * @param {{

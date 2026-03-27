@@ -4,6 +4,8 @@ import {
   renderContainersTable,
   renderImagesSummary,
   renderImagesTable,
+  renderVolumesSummary,
+  renderVolumesTable,
   parseFilterLines,
 } from "./docker-view.js";
 
@@ -20,6 +22,9 @@ import {
  *   imagesSummary: HTMLElement;
  *   imagesTbody: HTMLTableSectionElement;
  *   imagesFilter: HTMLTextAreaElement;
+ *   volumesSummary: HTMLElement;
+ *   volumesTbody: HTMLTableSectionElement;
+ *   volumesFilter: HTMLTextAreaElement;
  * }} els
  */
 export async function refreshAll(api, els) {
@@ -34,15 +39,18 @@ export async function refreshAll(api, els) {
 
   const imageFilterLines = parseFilterLines(els.imagesFilter.value);
   const containerFilterLines = parseFilterLines(els.containersFilter.value);
+  const volumeFilterLines = parseFilterLines(els.volumesFilter.value);
 
-  const [listRes, infoRes, psRes, imagesRes, colimaVer, dockerVer] = await Promise.all([
-    api.colimaList(),
-    api.dockerInfo(),
-    api.dockerPs({ filters: containerFilterLines }),
-    api.dockerImages({ filters: imageFilterLines }),
-    api.colimaVersion(),
-    api.dockerVersion(),
-  ]);
+  const [listRes, infoRes, psRes, imagesRes, volumesRes, colimaVer, dockerVer] =
+    await Promise.all([
+      api.colimaList(),
+      api.dockerInfo(),
+      api.dockerPs({ filters: containerFilterLines }),
+      api.dockerImages({ filters: imageFilterLines }),
+      api.dockerVolumes({ filters: volumeFilterLines }),
+      api.colimaVersion(),
+      api.dockerVersion(),
+    ]);
 
   fillProfileSelect(els.profileSelect, listRes.instances || []);
   const profile = els.profileSelect.value || undefined;
@@ -53,6 +61,8 @@ export async function refreshAll(api, els) {
   renderContainersTable(els.containersTbody, psRes.containers || []);
   renderImagesSummary(els.imagesSummary, imagesRes.images || [], imageFilterLines);
   renderImagesTable(els.imagesTbody, imagesRes.images || []);
+  renderVolumesSummary(els.volumesSummary, volumesRes.volumes || [], volumeFilterLines);
+  renderVolumesTable(els.volumesTbody, volumesRes.volumes || []);
 
   const cv = colimaVer.ok
     ? colimaVer.stdout.trim().split("\n")[0]
@@ -76,6 +86,8 @@ export async function refreshAll(api, els) {
   if (!psRes.ok && psRes.stderr) issues.push(`docker ps: ${psRes.stderr.trim()}`);
   if (!imagesRes.ok && imagesRes.stderr)
     issues.push(`docker image ls: ${imagesRes.stderr.trim()}`);
+  if (!volumesRes.ok && volumesRes.stderr)
+    issues.push(`docker volume ls: ${volumesRes.stderr.trim()}`);
 
   if (issues.length) {
     els.statusLine.textContent = `Refreshed with warnings — ${issues[0]}`;

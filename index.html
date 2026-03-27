@@ -59,6 +59,14 @@
             >
               Images
             </button>
+            <button
+              type="button"
+              class="nav-item nav-item--sub"
+              id="nav-docker-volumes"
+              data-nav="docker-volumes"
+            >
+              Volumes
+            </button>
           </div>
         </nav>
 
@@ -179,6 +187,46 @@
                     <th>Image ID</th>
                     <th>Created</th>
                     <th>Size</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="view-docker-volumes"
+          class="view view--hidden"
+          aria-labelledby="view-docker-volumes-heading"
+          hidden
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-docker-volumes-heading">Docker · Volumes</h2>
+            </div>
+            <label class="field-stacked field-stacked--spaced">
+              <span class="label"
+                >Filters (<code>docker volume ls -f</code>, one per line)</span
+              >
+              <textarea
+                id="volumes-filter"
+                class="input-textarea"
+                rows="3"
+                spellcheck="false"
+                placeholder="dangling=true&#10;name=my_volume"
+                aria-label="Docker volume list filters"
+              ></textarea>
+            </label>
+            <div class="docker-summary" id="docker-volumes-summary"></div>
+            <div class="table-wrap">
+              <table class="data-table" id="volumes-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Driver</th>
+                    <th>Scope</th>
+                    <th>Mountpoint</th>
                   </tr>
                 </thead>
                 <tbody></tbody>

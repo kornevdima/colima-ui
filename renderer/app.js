@@ -4,6 +4,7 @@ import { setupSidebar, setActiveNav, showView } from "./sidebar.js";
 import { wireColimaActions } from "./colima-actions.js";
 import { wireContainerRowContextMenu } from "./containers-context.js";
 import { wireImageRowContextMenu } from "./images-context.js";
+import { wireVolumeRowContextMenu } from "./volumes-context.js";
 
 function setStatus(el, message, isError) {
   el.textContent = message;
@@ -25,6 +26,11 @@ function main() {
   );
   const imagesFilter = /** @type {HTMLTextAreaElement} */ ($("images-filter"));
   const containersFilter = /** @type {HTMLTextAreaElement} */ ($("containers-filter"));
+  const volumesSummary = $("docker-volumes-summary");
+  const volumesTbody = /** @type {HTMLTableSectionElement} */ (
+    document.querySelector("#volumes-table tbody")
+  );
+  const volumesFilter = /** @type {HTMLTextAreaElement} */ ($("volumes-filter"));
   const colimaRoot = $("view-colima");
 
   const els = {
@@ -38,6 +44,9 @@ function main() {
     imagesSummary,
     imagesTbody,
     imagesFilter,
+    volumesSummary,
+    volumesTbody,
+    volumesFilter,
   };
 
   async function refresh() {
@@ -63,6 +72,7 @@ function main() {
 
   wireContainerRowContextMenu(containersTbody);
   wireImageRowContextMenu(imagesTbody);
+  wireVolumeRowContextMenu(volumesTbody);
 
   const api = window.colimaUi;
   if (api?.onDockerMutation) {

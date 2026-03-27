@@ -154,7 +154,56 @@ export function renderImagesTable(tbodyEl, images) {
   }
 }
 
-/** Lines passed to `docker ps -f` / `docker image ls -f` (one key=value per line). */
+export function renderVolumesSummary(rootEl, volumes, filterLines) {
+  rootEl.innerHTML = "";
+  const n = volumes.length;
+  const drivers = new Set(volumes.map((v) => String(v.Driver ?? "")).filter(Boolean));
+  const filterNote =
+    filterLines.length > 0 ? filterLines.join("; ") : "—";
+  const rows = [
+    ["Volumes listed", n],
+    ["Unique drivers", drivers.size],
+    ["Active filters", filterNote],
+  ];
+  for (const [k, v] of rows) {
+    const wrap = document.createElement("div");
+    wrap.className = "kv";
+    wrap.innerHTML = `<div class="k">${escapeHtml(k)}</div><div class="v">${escapeHtml(
+      String(v ?? "—")
+    )}</div>`;
+    rootEl.appendChild(wrap);
+  }
+}
+
+export function renderVolumesTable(tbodyEl, volumes) {
+  tbodyEl.innerHTML = "";
+  if (!volumes.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td colspan="4" class="empty">No volumes (or Docker unavailable / filters excluded all).</td>';
+    tbodyEl.appendChild(tr);
+    return;
+  }
+  for (const v of volumes) {
+    const tr = document.createElement("tr");
+    const name = String(v.Name ?? "").trim();
+    if (name) {
+      tr.dataset.volumeName = name;
+      tr.classList.add("volume-row");
+    }
+    const driver = v.Driver ?? "—";
+    const scope = v.Scope ?? "—";
+    const mp = v.Mountpoint ?? "—";
+    tr.innerHTML = `<td>${escapeHtml(name || "—")}</td><td>${escapeHtml(
+      String(driver)
+    )}</td><td>${escapeHtml(String(scope))}</td><td>${escapeHtml(
+      String(mp)
+    )}</td>`;
+    tbodyEl.appendChild(tr);
+  }
+}
+
+/** Lines passed to `docker * ls -f` (one key=value per line). */
 export function parseFilterLines(text) {
   return String(text || "")
     .split("\n")

@@ -35,7 +35,7 @@ Separate **domain** modules keep Colima lifecycle, Docker visibility, and Kubern
 | Domain | Module | Responsibility |
 |--------|--------|------------------|
 | **Colima** | `domain/colima/colima-operations.js` | Instance list, status, start/stop, version; parses `colima list -j` |
-| **Docker** | `domain/docker/docker-operations.js` | Engine info, container list, version |
+| **Docker** | `domain/docker/docker-operations.js` | Engine info, container/image/volume lists, version |
 | **Kubernetes** | `domain/kubernetes/kubernetes-operations.js` | Reserved; `getNodes()` is a stub unless `COLIMA_UI_K8S_ENABLED=1` |
 
 Cross-domain rules: **no** imports between `domain/colima`, `domain/docker`, and `domain/kubernetes`. Shared infrastructure lives under `lib/`.
@@ -81,13 +81,13 @@ No separate backend service or database in the POC.
 | **Logger** | `lib/logger.js` | Structured stdout logs from main |
 | **CLI runner** | `lib/cli.js` | `execFile` wrapper only (no domain parsing) |
 | **Terminal launch** | `lib/terminal-launch.js` | OS-specific spawn of Terminal / cmd / `x-terminal-emulator` for docker CLI |
-| **ID validation** | `lib/docker-identifiers.js` | Container / image IDs before context-menu mutations |
+| **ID validation** | `lib/docker-identifiers.js` | Container / image IDs / volume names before context-menu mutations |
 | **Colima domain** | `domain/colima/colima-operations.js` | Colima use-cases |
-| **Docker domain** | `domain/docker/docker-operations.js` | Docker use-cases (list, remove container/image) |
+| **Docker domain** | `domain/docker/docker-operations.js` | Docker use-cases (list, remove container/image/volume) |
 | **Kubernetes domain** | `domain/kubernetes/kubernetes-operations.js` | Future kubectl use-cases |
 | **Preload** | `preload.js` | `colimaUi.*` → `ipcRenderer.invoke` |
 | **Renderer** | `renderer/app.js` (ES module entry) | Compose sidebar navigation, refresh, Colima actions |
-| **Renderer modules** | `renderer/sidebar.js`, `renderer/refresh.js`, `renderer/colima-view.js`, `renderer/docker-view.js`, `renderer/colima-actions.js`, `renderer/utils.js` | Section nav, data fetch/render split by domain |
+| **Renderer modules** | `renderer/sidebar.js`, `renderer/refresh.js`, `renderer/colima-view.js`, `renderer/docker-view.js`, `renderer/*-context.js`, `renderer/colima-actions.js`, `renderer/utils.js` | Section nav, data fetch/render split by domain |
 | **Presentation** | `index.html`, `styles.css` | Shell + sidebar layout, view panels |
 
 ---
@@ -125,10 +125,12 @@ sequenceDiagram
 | `docker:info` | — | `docker info --format '{{json .}}'` → `{ info }` |
 | `docker:ps` | `{ filters?: string[] }` | `docker ps -a …` + `-f` per line → `{ containers[] }` |
 | `docker:images` | `{ filters?: string[] }` | `docker image ls -a …` + one `-f` per `key=value` line → `{ images[] }` |
+| `docker:volumes` | `{ filters?: string[] }` | `docker volume ls …` + `-f` per line → `{ volumes[] }` |
 | `docker:version` | — | `docker version --format '{{json .}}'` |
 | `containers:contextMenu` | `{ containerId, browserUrls?, x?, y? }` | Native **Menu**: attach/exec → terminal; **Open in browser** → `shell.openExternal` (parsed published ports); **Remove** → `docker rm -f` → **`docker:mutation`** |
 | `images:contextMenu` | `{ imageId, x?, y? }` | Native **Menu**: **Remove image** → confirm → `docker rmi -f` → **`docker:mutation`** |
-| *(main → renderer)* `docker:mutation` | — | Fired after successful **rm** / **rmi** so UI can **refresh** lists |
+| `volumes:contextMenu` | `{ volumeName, x?, y? }` | Native **Menu**: **Remove volume** → confirm → `docker volume rm -f` → **`docker:mutation`** |
+| *(main → renderer)* `docker:mutation` | — | Fired after successful **rm** / **rmi** / **volume rm** so UI can **refresh** lists |
 | `kubernetes:getNodes` | — | If `COLIMA_UI_K8S_ENABLED=1`: `kubectl get nodes -o json`; else `{ notImplemented: true, … }` |
 
 All responses include at least `{ ok, code, stdout, stderr }` from `runBinary` unless noted; parsers may add fields.
