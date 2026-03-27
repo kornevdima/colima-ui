@@ -5,6 +5,7 @@ const VIEWS = [
   "docker-containers",
   "docker-images",
   "docker-volumes",
+  "app-logs",
 ];
 
 const VIEW_TO_GROUP = {

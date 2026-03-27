@@ -21,6 +21,32 @@ contextBridge.exposeInMainWorld("colimaUi", {
     ipcRenderer.invoke("images:contextMenu", payload ?? {}),
   openVolumeContextMenu: (payload) =>
     ipcRenderer.invoke("volumes:contextMenu", payload ?? {}),
+  commandLogGet: () => ipcRenderer.invoke("command-log:get"),
+  commandLogClear: () => ipcRenderer.invoke("command-log:clear"),
+  onCommandLogAppend: (callback) => {
+    const channel = "command-log:append";
+    const handler = (_e, entry) => {
+      try {
+        callback(entry);
+      } catch {
+        /* ignore */
+      }
+    };
+    ipcRenderer.on(channel, handler);
+    return () => ipcRenderer.removeListener(channel, handler);
+  },
+  onCommandLogCleared: (callback) => {
+    const channel = "command-log:cleared";
+    const handler = () => {
+      try {
+        callback();
+      } catch {
+        /* ignore */
+      }
+    };
+    ipcRenderer.on(channel, handler);
+    return () => ipcRenderer.removeListener(channel, handler);
+  },
   onDockerMutation: (callback) => {
     const channel = "docker:mutation";
     const handler = () => {

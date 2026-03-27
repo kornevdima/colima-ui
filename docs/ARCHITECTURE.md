@@ -79,7 +79,8 @@ No separate backend service or database in the POC.
 | **Main process** | `main.js` | Compose config + logger + domain factories; register IPC; no business logic |
 | **Config** | `lib/config.js` | Env-driven settings (twelve-factor config) |
 | **Logger** | `lib/logger.js` | Structured stdout logs from main |
-| **CLI runner** | `lib/cli.js` | `execFile` wrapper only (no domain parsing) |
+| **CLI runner** | `lib/cli.js` | `execFile` wrapper; optional **`setAfterRunHook`** feeds **`lib/command-log.js`** |
+| **Command log** | `lib/command-log.js` | In-memory ring buffer + broadcast to renderer for **Logs** view |
 | **Terminal launch** | `lib/terminal-launch.js` | OS-specific spawn of Terminal / cmd / `x-terminal-emulator` for docker CLI |
 | **ID validation** | `lib/docker-identifiers.js` | Container / image IDs / volume names before context-menu mutations |
 | **Colima domain** | `domain/colima/colima-operations.js` | Colima use-cases |
@@ -87,7 +88,7 @@ No separate backend service or database in the POC.
 | **Kubernetes domain** | `domain/kubernetes/kubernetes-operations.js` | Future kubectl use-cases |
 | **Preload** | `preload.js` | `colimaUi.*` → `ipcRenderer.invoke` |
 | **Renderer** | `renderer/app.js` (ES module entry) | Compose sidebar navigation, refresh, Colima actions |
-| **Renderer modules** | `renderer/sidebar.js`, `renderer/refresh.js`, `renderer/colima-view.js`, `renderer/docker-view.js`, `renderer/*-context.js`, `renderer/colima-actions.js`, `renderer/utils.js` | Section nav, data fetch/render split by domain |
+| **Renderer modules** | `renderer/sidebar.js`, `renderer/refresh.js`, `renderer/colima-view.js`, `renderer/docker-view.js`, `renderer/command-log-view.js`, `renderer/*-context.js`, `renderer/colima-actions.js`, `renderer/utils.js` | Section nav, data fetch/render split by domain |
 | **Presentation** | `index.html`, `styles.css` | Shell + sidebar layout, view panels |
 
 ---
@@ -134,6 +135,9 @@ sequenceDiagram
 | `images:contextMenu` | `{ imageId, x?, y? }` | Native **Menu**: **Remove image** → confirm → `docker rmi -f` → **`docker:mutation`** |
 | `volumes:contextMenu` | `{ volumeName, x?, y? }` | Native **Menu**: **Remove volume** → confirm → `docker volume rm -f` → **`docker:mutation`** |
 | *(main → renderer)* `docker:mutation` | — | Fired after successful **rm** / **rmi** / **volume rm** so UI can **refresh** lists |
+| `command-log:get` | — | `{ entries[] }` — ring buffer of `runBinary` invocations (timestamp, bin, args, ok, code, stderr snippet, durationMs, …) |
+| `command-log:clear` | — | Clears buffer; *(main → renderer)* **`command-log:cleared`** |
+| *(main → renderer)* `command-log:append` | — | After each **`lib/cli.js`** completion; Logs view refreshes when open |
 | `kubernetes:getNodes` | — | If `COLIMA_UI_K8S_ENABLED=1`: `kubectl get nodes -o json`; else `{ notImplemented: true, … }` |
 
 All responses include at least `{ ok, code, stdout, stderr }` from `runBinary` unless noted; parsers may add fields.

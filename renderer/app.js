@@ -11,6 +11,7 @@ import { applyColimaUiDefaultsToForm } from "./colima-view.js";
 import { wireContainerRowContextMenu } from "./containers-context.js";
 import { wireImageRowContextMenu } from "./images-context.js";
 import { wireVolumeRowContextMenu } from "./volumes-context.js";
+import { renderCommandLogTable } from "./command-log-view.js";
 
 function setStatus(el, message, isError) {
   el.textContent = message;
@@ -44,6 +45,11 @@ function main() {
   const profilesTbody = /** @type {HTMLTableSectionElement} */ (
     document.querySelector("#profiles-table tbody")
   );
+  const commandLogTbody = /** @type {HTMLTableSectionElement} */ (
+    document.querySelector("#command-log-table tbody")
+  );
+
+  let activeView = "colima-runtime";
 
   const els = {
     profileSelect,
@@ -68,10 +74,28 @@ function main() {
     await refreshAll(window.colimaUi, els);
   }
 
+  async function loadCommandLog() {
+    const ui = window.colimaUi;
+    if (!ui?.commandLogGet) {
+      renderCommandLogTable(commandLogTbody, []);
+      return;
+    }
+    try {
+      const r = await ui.commandLogGet();
+      renderCommandLogTable(commandLogTbody, r.entries || []);
+    } catch {
+      renderCommandLogTable(commandLogTbody, []);
+    }
+  }
+
   function navigate(view) {
+    activeView = view;
     setActiveNav(view);
     showView(view);
     syncAccordionForView(view);
+    if (view === "app-logs") {
+      loadCommandLog().catch(() => {});
+    }
   }
 
   setupSidebar({
@@ -104,6 +128,32 @@ function main() {
       refresh().catch(() => {});
     });
   }
+
+  if (api?.onCommandLogAppend) {
+    api.onCommandLogAppend(() => {
+      if (activeView === "app-logs") {
+        loadCommandLog().catch(() => {});
+      }
+    });
+  }
+
+  if (api?.onCommandLogCleared) {
+    api.onCommandLogCleared(() => {
+      if (activeView === "app-logs") {
+        renderCommandLogTable(commandLogTbody, []);
+      }
+    });
+  }
+
+  document.getElementById("command-log-clear")?.addEventListener("click", async () => {
+    if (!api?.commandLogClear) return;
+    try {
+      await api.commandLogClear();
+      renderCommandLogTable(commandLogTbody, []);
+    } catch {
+      /* ignore */
+    }
+  });
 
   navigate("colima-runtime");
   refresh();

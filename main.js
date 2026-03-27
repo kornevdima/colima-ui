@@ -11,6 +11,27 @@ const {
   isValidDockerImageId,
   isValidDockerVolumeName,
 } = require("./lib/docker-identifiers");
+const { setAfterRunHook } = require("./lib/cli");
+const commandLog = require("./lib/command-log");
+
+function broadcastCommandLogEntry(entry) {
+  for (const w of BrowserWindow.getAllWindows()) {
+    if (w.isDestroyed()) continue;
+    w.webContents.send("command-log:append", entry);
+  }
+}
+
+function broadcastCommandLogCleared() {
+  for (const w of BrowserWindow.getAllWindows()) {
+    if (w.isDestroyed()) continue;
+    w.webContents.send("command-log:cleared");
+  }
+}
+
+commandLog.setBroadcast(broadcastCommandLogEntry);
+setAfterRunHook((meta) => {
+  commandLog.append(meta);
+});
 
 const log = createLogger(config.logging);
 const colima = createColimaOperations({ config, log });
@@ -70,6 +91,13 @@ app.whenReady().then(() => {
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
+});
+
+ipcMain.handle("command-log:get", () => ({ entries: commandLog.getAll() }));
+ipcMain.handle("command-log:clear", () => {
+  commandLog.clear();
+  broadcastCommandLogCleared();
+  return { ok: true };
 });
 
 ipcMain.handle("colima:list", () => colima.listInstances());

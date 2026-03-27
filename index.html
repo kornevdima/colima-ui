@@ -139,6 +139,14 @@
           <button type="button" id="sidebar-refresh" class="btn primary btn-block">
             Refresh
           </button>
+          <button
+            type="button"
+            id="nav-app-logs"
+            class="btn btn-block btn-muted"
+            aria-label="Open command log"
+          >
+            Logs
+          </button>
         </div>
 
         <div class="sidebar-foot">
@@ -426,6 +434,42 @@
                     <th>Driver</th>
                     <th>Scope</th>
                     <th>Mountpoint</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="view-app-logs"
+          class="view view--hidden"
+          aria-labelledby="view-app-logs-heading"
+          hidden
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-app-logs-heading">Command log</h2>
+              <div class="actions">
+                <button type="button" class="btn btn-muted" id="command-log-clear">
+                  Clear
+                </button>
+              </div>
+            </div>
+            <p class="panel-hint">
+              Every <code>execFile</code> from <code>lib/cli.js</code> in this session (Colima, Docker,
+              kubectl when enabled). Stderr is truncated; stdout size is bytes only.
+            </p>
+            <div class="table-wrap">
+              <table class="data-table command-log-table" id="command-log-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Command</th>
+                    <th>Exit</th>
+                    <th>ms</th>
+                    <th>Notes</th>
                   </tr>
                 </thead>
                 <tbody></tbody>

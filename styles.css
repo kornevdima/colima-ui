@@ -208,10 +208,53 @@ body {
 .sidebar-tools {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   flex-shrink: 0;
   padding-top: 8px;
   border-top: 1px solid var(--border);
+}
+
+.command-log-table .cmd-log-time {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.command-log-table .cmd-log-cmd {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  max-width: 36rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.command-log-table .cmd-log-exit {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.command-log-table .cmd-log-exit--ok {
+  color: #7ecfae;
+}
+
+.command-log-table .cmd-log-exit--err {
+  color: #e89191;
+}
+
+.command-log-table .cmd-log-ms {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.command-log-table .cmd-log-notes {
+  font-size: 0.78rem;
+  max-width: 24rem;
+  overflow-wrap: anywhere;
+  color: var(--muted);
 }
 
 .field-stacked {
@@ -367,6 +410,25 @@ select {
 
 .btn.danger:hover:not(:disabled) {
   background: #2a1a1a;
+}
+
+.btn-muted {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  border-color: rgba(61, 70, 88, 0.85);
+  font-weight: 500;
+}
+
+.btn-muted:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  border-color: #3d4658;
+}
+
+#nav-app-logs.nav-item--active {
+  color: var(--text);
+  background: rgba(61, 154, 118, 0.12);
+  border-color: rgba(61, 154, 118, 0.4);
 }
 
 .status-line {
