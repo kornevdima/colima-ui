@@ -114,10 +114,10 @@ Records use **DD-** ids for traceability in PRs and issues. They do not replace 
 
 ### DD-013 — Container row context menu → system terminal
 
-- **Context:** Users need **attach** / interactive **exec** without an in-app PTY or log viewer.
-- **Decision:** **Right-click** a container row (with `data-container-id`) → **Electron `Menu`**. Actions spawn the **OS default terminal** with `docker attach` or `docker exec -it … /bin/sh` (`lib/terminal-launch.js`). **macOS:** AppleScript **Terminal**; **Windows:** `start cmd /k`; **Linux:** `gnome-terminal` / `x-terminal-emulator` / `bash` fallback or **`COLIMA_UI_TERMINAL_LINUX`**.
+- **Context:** Users need **attach** / interactive **exec** / **log follow** without an in-app PTY or log viewer.
+- **Decision:** **Right-click** a container row (with `data-container-id`) → **Electron `Menu`**. Actions spawn the **OS default terminal** with `docker attach`, `docker exec -it … /bin/sh`, or **`docker logs -f --tail 200`** (`lib/terminal-launch.js`). **macOS:** AppleScript **Terminal**; **Windows:** `start cmd /k`; **Linux:** `gnome-terminal` / `x-terminal-emulator` / `bash` fallback or **`COLIMA_UI_TERMINAL_LINUX`**.
 - **Alternatives considered:** node-pty in renderer (heavy, security); **iTerm** by default on Mac (defer to env / future).
-- **Consequences:** Container ID validated as hex (12–128 chars) before menu; stopped containers still offer menu — **attach** may fail in the external terminal.
+- **Consequences:** Container ID validated as hex (12–128 chars) before menu; stopped containers still offer menu — **attach** may fail in the external terminal; **logs** still work for exited containers (historical tail + follow until stream ends).
 
 ---
 

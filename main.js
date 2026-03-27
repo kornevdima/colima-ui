@@ -85,7 +85,7 @@ ipcMain.handle("docker:volumes", (_e, options) => docker.listVolumes(options ?? 
 ipcMain.handle("docker:version", () => docker.getVersion());
 
 /**
- * Native context menu for a container row; attach/exec use the system terminal; remove runs `docker rm -f`.
+ * Native context menu for a container row; attach/exec/logs use the system terminal; remove runs `docker rm -f`.
  * @param {Electron.IpcMainInvokeEvent} event
  * @param {{ containerId?: string; browserUrls?: string[]; x?: number; y?: number }} payload — x/y = client/content DIP (from `clientX`/`clientY`)
  */
@@ -115,6 +115,14 @@ ipcMain.handle("containers:contextMenu", (event, payload) => {
         launchDockerInTerminal({
           dockerBin,
           dockerArgs: ["exec", "-it", id, "/bin/sh"],
+        }),
+    },
+    {
+      label: "Tail logs in Terminal",
+      click: () =>
+        launchDockerInTerminal({
+          dockerBin,
+          dockerArgs: ["logs", "-f", "--tail", "200", id],
         }),
     },
   ];
