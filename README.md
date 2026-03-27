@@ -50,12 +50,12 @@ Runtime behaviour is driven by **environment variables** (no config file in the 
 |----------|---------|---------|
 | `COLIMA_UI_COLIMA_BIN` | `colima` | Colima executable |
 | `COLIMA_UI_DOCKER_BIN` | `docker` | Docker executable |
-| `COLIMA_UI_KUBECTL_BIN` | `kubectl` | kubectl executable (future / optional) |
+| `COLIMA_UI_KUBECTL_BIN` | `kubectl` | kubectl executable (Kubernetes sidebar views) |
 | `COLIMA_UI_TIMEOUT_SHORT_MS` | `60000` | Read-only CLI calls |
 | `COLIMA_UI_TIMEOUT_LONG_MS` | `900000` | `colima start` / `colima stop` |
 | `COLIMA_UI_K8S_CPU` | `4` | CPU flag for **Start + Kubernetes** |
 | `COLIMA_UI_K8S_MEMORY_GIB` | `8` | `--memory` (GiB) for that preset |
-| `COLIMA_UI_K8S_ENABLED` | *(empty)* | Set to `1` to run real `kubectl` from `kubernetes:getNodes` IPC |
+| `COLIMA_UI_K8S_ENABLED` | `1` | Set to `0` to skip all `kubectl` list calls on **Refresh** (no cluster / docker-only) |
 | `COLIMA_UI_LOG_LEVEL` | `info` | `error` / `warn` / `info` / `debug` |
 | `COLIMA_UI_TERMINAL_LINUX` | *(auto)* | Optional Linux terminal binary; if unset, tries **gnome-terminal** then **x-terminal-emulator**, else runs **bash** in background (no window). When set, invoked as `TERM -e bash -lc '<docker cmd>'`. |
 
@@ -67,14 +67,14 @@ Domain layout: **`domain/colima`**, **`domain/docker`**, **`domain/kubernetes`**
 
 | UI control | Equivalent CLI (see `workflow.md`) |
 |------------|--------------------------------------|
-| **Refresh** | `colima list -j`, `colima status -j` (when running), `docker info`, `docker ps -a` (optional `-f` from **Containers**), `docker image ls` (optional `-f` from **Images**) |
+| **Refresh** | `colima list -j`, `colima status -j`, `colima template --print` (+ file read), `docker info` / `ps` / `image ls` / `volume ls` / `network ls` (with per-tab filters where set), versions; unless `COLIMA_UI_K8S_ENABLED=0`, also `kubectl get nodes`, `kubectl get pods -A`, `kubectl get gateway.networking.istio.io -A`, `kubectl get virtualservice.networking.istio.io -A` |
 | **Start** | `colima start -p <profile>` |
 | **Start + Kubernetes** | `colima start --cpu 4 --memory 8 --kubernetes` (+ `-p <profile>` if not default) — same idea as *§1. Start Colima with Kubernetes* |
 | **Stop** | `colima stop` — same idea as *Cleanup* `colima stop` |
 
 **Profile** maps to Colima’s `-p` / instance name from `colima list`.
 
-**Not implemented in the POC** (still do these from the terminal per `workflow.md`): `kubectl`, `helm`, `istioctl`, port-forwards, Istio addons, service curls, cleanup beyond Colima stop.
+**Not implemented in the POC** (still do these from the terminal per `workflow.md`): mutating `kubectl` / **Helm** / **istioctl**, port-forwards, Istio addon installs, service curls, cleanup beyond Colima stop. Read-only `kubectl` lists are available under **Kubernetes** in the app.
 
 ---
 

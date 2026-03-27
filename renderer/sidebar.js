@@ -6,6 +6,10 @@ const VIEWS = [
   "docker-images",
   "docker-volumes",
   "docker-networks",
+  "kubernetes-nodes",
+  "kubernetes-pods",
+  "kubernetes-gateways",
+  "kubernetes-virtualservices",
   "app-logs",
 ];
 
@@ -17,9 +21,13 @@ const VIEW_TO_GROUP = {
   "docker-images": "docker",
   "docker-volumes": "docker",
   "docker-networks": "docker",
+  "kubernetes-nodes": "kubernetes",
+  "kubernetes-pods": "kubernetes",
+  "kubernetes-gateways": "kubernetes",
+  "kubernetes-virtualservices": "kubernetes",
 };
 
-const GROUPS = ["colima", "docker"];
+const GROUPS = ["colima", "docker", "kubernetes"];
 
 /**
  * @param {string} group

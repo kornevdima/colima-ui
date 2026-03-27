@@ -25,7 +25,7 @@ Records use **DD-** ids for traceability in PRs and issues. They do not replace 
 ### DD-003 — Section navigation (Colima / Docker) as sibling views
 
 - **Context:** Two bounded domains (aligned with backend); more sections (e.g. Kubernetes) expected later.
-- **Decision:** One **view** visible at a time (`#view-colima-runtime`, `#view-colima-profiles`, `#view-colima-template`, `#view-docker-*`); sidebar uses **accordion** headers (**Colima** / **Docker**) that expand/collapse sub-**`.nav-item`** rows (only one group expanded at a time when opening a group); `aria-current` on the active leaf.
+- **Decision:** One **view** visible at a time (`#view-colima-*`, `#view-docker-*`, `#view-kubernetes-*`, `#view-app-logs`); sidebar uses **accordion** headers (**Colima** / **Docker** / **Kubernetes**) that expand/collapse sub-**`.nav-item`** rows (only one group expanded at a time when opening a group); `aria-current` on the active leaf.
 - **Alternatives considered:** Single long page with anchors (harder to focus); tabs only in main (sidebar redundancy).
 - **Consequences:** `renderer/sidebar.js` owns a small list of view ids; adding a section requires HTML + CSS + sidebar list.
 

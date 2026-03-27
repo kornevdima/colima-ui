@@ -330,5 +330,7 @@ ipcMain.handle("volumes:contextMenu", (event, payload) => {
   menu.popup(popupOpts);
 });
 
-/** Reserved for UI; returns stub unless `COLIMA_UI_K8S_ENABLED=1`. */
 ipcMain.handle("kubernetes:getNodes", () => kubernetes.getNodes());
+ipcMain.handle("kubernetes:getPods", () => kubernetes.getPods());
+ipcMain.handle("kubernetes:getGateways", () => kubernetes.getGateways());
+ipcMain.handle("kubernetes:getVirtualServices", () => kubernetes.getVirtualServices());

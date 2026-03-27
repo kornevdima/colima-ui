@@ -53,6 +53,22 @@ function main() {
   const commandLogTbody = /** @type {HTMLTableSectionElement} */ (
     document.querySelector("#command-log-table tbody")
   );
+  const k8sNodesSummary = $("k8s-nodes-summary");
+  const k8sNodesTbody = /** @type {HTMLTableSectionElement} */ (
+    document.querySelector("#k8s-nodes-table tbody")
+  );
+  const k8sPodsSummary = $("k8s-pods-summary");
+  const k8sPodsTbody = /** @type {HTMLTableSectionElement} */ (
+    document.querySelector("#k8s-pods-table tbody")
+  );
+  const k8sGatewaysSummary = $("k8s-gateways-summary");
+  const k8sGatewaysTbody = /** @type {HTMLTableSectionElement} */ (
+    document.querySelector("#k8s-gateways-table tbody")
+  );
+  const k8sVsSummary = $("k8s-vs-summary");
+  const k8sVsTbody = /** @type {HTMLTableSectionElement} */ (
+    document.querySelector("#k8s-vs-table tbody")
+  );
 
   let activeView = "colima-runtime";
 
@@ -76,6 +92,14 @@ function main() {
     profilesTbody,
     colimaTemplateMeta,
     colimaTemplateYaml,
+    k8sNodesSummary,
+    k8sNodesTbody,
+    k8sPodsSummary,
+    k8sPodsTbody,
+    k8sGatewaysSummary,
+    k8sGatewaysTbody,
+    k8sVsSummary,
+    k8sVsTbody,
   };
 
   async function refresh() {

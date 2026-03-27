@@ -36,7 +36,7 @@ Separate **domain** modules keep Colima lifecycle, Docker visibility, and Kubern
 |--------|--------|------------------|
 | **Colima** | `domain/colima/colima-operations.js` | Instance list, status, start/stop, version; parses `colima list -j` |
 | **Docker** | `domain/docker/docker-operations.js` | Engine info, container/image/volume/network lists, version |
-| **Kubernetes** | `domain/kubernetes/kubernetes-operations.js` | Reserved; `getNodes()` is a stub unless `COLIMA_UI_K8S_ENABLED=1` |
+| **Kubernetes** | `domain/kubernetes/kubernetes-operations.js` | Read-only `kubectl` lists (nodes, pods, Istio Gateway / VirtualService); skipped when `COLIMA_UI_K8S_ENABLED=0` |
 
 Cross-domain rules: **no** imports between `domain/colima`, `domain/docker`, and `domain/kubernetes`. Shared infrastructure lives under `lib/`.
 
@@ -85,10 +85,10 @@ No separate backend service or database in the POC.
 | **ID validation** | `lib/docker-identifiers.js` | Container / image IDs / volume names before context-menu mutations |
 | **Colima domain** | `domain/colima/colima-operations.js` | Colima use-cases |
 | **Docker domain** | `domain/docker/docker-operations.js` | Docker use-cases (list networks; list/remove container/image/volume) |
-| **Kubernetes domain** | `domain/kubernetes/kubernetes-operations.js` | Future kubectl use-cases |
+| **Kubernetes domain** | `domain/kubernetes/kubernetes-operations.js` | `kubectl get` JSON → `items[]` for UI tables |
 | **Preload** | `preload.js` | `colimaUi.*` → `ipcRenderer.invoke` |
 | **Renderer** | `renderer/app.js` (ES module entry) | Compose sidebar navigation, refresh, Colima actions |
-| **Renderer modules** | `renderer/sidebar.js`, `renderer/refresh.js`, `renderer/colima-view.js`, `renderer/docker-view.js`, `renderer/command-log-view.js`, `renderer/*-context.js`, `renderer/colima-actions.js`, `renderer/utils.js` | Section nav, data fetch/render split by domain |
+| **Renderer modules** | `renderer/sidebar.js`, `renderer/refresh.js`, `renderer/colima-view.js`, `renderer/docker-view.js`, `renderer/k8s-view.js`, `renderer/command-log-view.js`, `renderer/*-context.js`, `renderer/colima-actions.js`, `renderer/utils.js` | Section nav, data fetch/render split by domain |
 | **Presentation** | `index.html`, `styles.css` | Shell + sidebar layout, view panels |
 
 ---
@@ -139,9 +139,12 @@ sequenceDiagram
 | `command-log:get` | — | `{ entries[] }` — ring buffer of `runBinary` invocations (timestamp, bin, args, ok, code, stderr snippet, durationMs, …) |
 | `command-log:clear` | — | Clears buffer; *(main → renderer)* **`command-log:cleared`** |
 | *(main → renderer)* `command-log:append` | — | After each **`lib/cli.js`** completion; Logs view refreshes when open |
-| `kubernetes:getNodes` | — | If `COLIMA_UI_K8S_ENABLED=1`: `kubectl get nodes -o json`; else `{ notImplemented: true, … }` |
+| `kubernetes:getNodes` | — | `kubectl get nodes -o json` → `{ items[] }` when enabled; else `{ ok, items: [], skipped: true }` |
+| `kubernetes:getPods` | — | `kubectl get pods -A -o json` → `{ items[] }` |
+| `kubernetes:getGateways` | — | `kubectl get gateway.networking.istio.io -A -o json` → `{ items[] }` (Istio) |
+| `kubernetes:getVirtualServices` | — | `kubectl get virtualservice.networking.istio.io -A -o json` → `{ items[] }` |
 
-All responses include at least `{ ok, code, stdout, stderr }` from `runBinary` unless noted; parsers may add fields.
+All responses include at least `{ ok, code, stdout, stderr }` from `runBinary` unless noted; parsers may add **`items`** and **`parseError`** for Kubernetes lists.
 
 ---
 
@@ -191,13 +194,15 @@ All responses include at least `{ ok, code, stdout, stderr }` from `runBinary` u
 | `colima` / `docker` missing | `execFile` error; stderr surfaced; empty or partial UI |
 | Colima stopped | `colima status -j` may fail; **list** JSON still used for instance row |
 | Docker daemon unreachable | `docker info` / `ps` fail; summary shows fallback message |
+| `kubectl` / cluster unreachable | K8s tables empty; stderr on status line when `COLIMA_UI_K8S_ENABLED` not `0` |
+| Istio CRDs missing | Gateway / VirtualService `kubectl` errors; empty tables + stderr |
 | Start/stop exceeds timeout | `runBinary` marks killed / timeout **[TBD]:** distinguish in UI copy |
 
 ---
 
 ## 11. Future architecture hooks **[TBD]**
 
-- **Kubernetes UI** wired to existing `kubernetes:getNodes` and expanded commands.  
+- **Kubernetes** mutations (apply, delete, port-forward UI), **Gateway API** resources, non-Istio gateways.  
 - **Streaming logs** for `colima start` (switch to `spawn`, IPC events).  
 - **Packaging** (electron-builder) and code signing.  
 - **Settings UI** that writes env or uses `electron-store` (today: env only).

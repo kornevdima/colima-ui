@@ -137,6 +137,59 @@
               </button>
             </div>
           </div>
+
+          <div class="nav-accordion" data-accordion="kubernetes">
+            <button
+              type="button"
+              class="nav-group-toggle"
+              id="accordion-kubernetes"
+              data-accordion="kubernetes"
+              aria-expanded="false"
+              aria-controls="nav-kubernetes-items"
+            >
+              Kubernetes
+            </button>
+            <div
+              id="nav-kubernetes-items"
+              class="nav-group-items"
+              role="group"
+              aria-label="Kubernetes pages"
+              hidden
+            >
+              <button
+                type="button"
+                class="nav-item nav-item--sub"
+                id="nav-kubernetes-nodes"
+                data-nav="kubernetes-nodes"
+              >
+                Nodes
+              </button>
+              <button
+                type="button"
+                class="nav-item nav-item--sub"
+                id="nav-kubernetes-pods"
+                data-nav="kubernetes-pods"
+              >
+                Pods
+              </button>
+              <button
+                type="button"
+                class="nav-item nav-item--sub"
+                id="nav-kubernetes-gateways"
+                data-nav="kubernetes-gateways"
+              >
+                Gateways
+              </button>
+              <button
+                type="button"
+                class="nav-item nav-item--sub"
+                id="nav-kubernetes-virtualservices"
+                data-nav="kubernetes-virtualservices"
+              >
+                VirtualServices
+              </button>
+            </div>
+          </div>
         </nav>
 
         <div class="sidebar-tools">
@@ -486,6 +539,127 @@
                     <th>IPv6</th>
                     <th>Internal</th>
                     <th>Labels</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="view-kubernetes-nodes"
+          class="view view--hidden"
+          aria-labelledby="view-kubernetes-nodes-heading"
+          hidden
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-kubernetes-nodes-heading">Kubernetes · Nodes</h2>
+            </div>
+            <p class="panel-hint">
+              <code>kubectl get nodes -o json</code>. Uses current kubeconfig context (e.g. Colima:
+              <code>kubectl config use-context colima</code>). Set
+              <code>COLIMA_UI_K8S_ENABLED=0</code> to skip all Kubernetes list calls on refresh.
+            </p>
+            <div class="docker-summary" id="k8s-nodes-summary"></div>
+            <div class="table-wrap">
+              <table class="data-table" id="k8s-nodes-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Ready</th>
+                    <th>Kubelet</th>
+                    <th>Addresses</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="view-kubernetes-pods"
+          class="view view--hidden"
+          aria-labelledby="view-kubernetes-pods-heading"
+          hidden
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-kubernetes-pods-heading">Kubernetes · Pods</h2>
+            </div>
+            <p class="panel-hint"><code>kubectl get pods -A -o json</code> (all namespaces).</p>
+            <div class="docker-summary" id="k8s-pods-summary"></div>
+            <div class="table-wrap">
+              <table class="data-table" id="k8s-pods-table">
+                <thead>
+                  <tr>
+                    <th>Namespace</th>
+                    <th>Name</th>
+                    <th>Phase</th>
+                    <th>Ready / restarts</th>
+                    <th>Node</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="view-kubernetes-gateways"
+          class="view view--hidden"
+          aria-labelledby="view-kubernetes-gateways-heading"
+          hidden
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-kubernetes-gateways-heading">Kubernetes · Gateways (Istio)</h2>
+            </div>
+            <p class="panel-hint">
+              <code>kubectl get gateway.networking.istio.io -A -o json</code> — Istio
+              <strong>Gateway</strong>, not Kubernetes Gateway API.
+            </p>
+            <div class="docker-summary" id="k8s-gateways-summary"></div>
+            <div class="table-wrap">
+              <table class="data-table" id="k8s-gateways-table">
+                <thead>
+                  <tr>
+                    <th>Namespace</th>
+                    <th>Name</th>
+                    <th>Hosts (servers)</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="view-kubernetes-virtualservices"
+          class="view view--hidden"
+          aria-labelledby="view-kubernetes-virtualservices-heading"
+          hidden
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-kubernetes-virtualservices-heading">Kubernetes · VirtualServices</h2>
+            </div>
+            <p class="panel-hint">
+              <code>kubectl get virtualservice.networking.istio.io -A -o json</code>
+            </p>
+            <div class="docker-summary" id="k8s-vs-summary"></div>
+            <div class="table-wrap">
+              <table class="data-table" id="k8s-vs-table">
+                <thead>
+                  <tr>
+                    <th>Namespace</th>
+                    <th>Name</th>
+                    <th>Hosts</th>
+                    <th>Gateways</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
