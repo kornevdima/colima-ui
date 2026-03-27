@@ -67,6 +67,11 @@ export function renderContainersTable(tbodyEl, containers) {
   }
   for (const c of containers) {
     const tr = document.createElement("tr");
+    const cid = String(c.ID ?? "").trim();
+    if (cid) {
+      tr.dataset.containerId = cid;
+      tr.classList.add("container-row");
+    }
     const name = (c.Names || "").replace(/^\//, "") || c.ID?.slice(0, 12) || "—";
     const ports = c.Ports || "—";
     const size = c.Size ?? "—";

@@ -2,6 +2,7 @@ import { $ } from "./utils.js";
 import { refreshAll } from "./refresh.js";
 import { setupSidebar, setActiveNav, showView } from "./sidebar.js";
 import { wireColimaActions } from "./colima-actions.js";
+import { wireContainerRowContextMenu } from "./containers-context.js";
 
 function setStatus(el, message, isError) {
   el.textContent = message;
@@ -58,6 +59,8 @@ function main() {
     setStatus: (msg, err) => setStatus(statusLine, msg, err),
     refresh,
   });
+
+  wireContainerRowContextMenu(containersTbody);
 
   navigate("colima");
   refresh();

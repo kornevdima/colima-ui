@@ -513,3 +513,11 @@ select {
   padding: 24px;
 }
 
+#containers-table tbody tr.container-row {
+  cursor: context-menu;
+}
+
+#containers-table tbody tr.container-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+

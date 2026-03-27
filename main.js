@@ -1,10 +1,11 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, Menu } = require("electron");
 const path = require("path");
 const { config } = require("./lib/config");
 const { createLogger } = require("./lib/logger");
 const { createColimaOperations } = require("./domain/colima/colima-operations");
 const { createDockerOperations } = require("./domain/docker/docker-operations");
 const { createKubernetesOperations } = require("./domain/kubernetes/kubernetes-operations");
+const { launchDockerInTerminal, isValidContainerId } = require("./lib/terminal-launch");
 
 const log = createLogger(config.logging);
 const colima = createColimaOperations({ config, log });
@@ -50,6 +51,50 @@ ipcMain.handle("docker:info", () => docker.getInfo());
 ipcMain.handle("docker:ps", (_e, options) => docker.listContainers(options ?? {}));
 ipcMain.handle("docker:images", (_e, options) => docker.listImages(options ?? {}));
 ipcMain.handle("docker:version", () => docker.getVersion());
+
+/**
+ * Native context menu for a container row; actions open the system terminal (no in-app PTY).
+ * @param {Electron.IpcMainInvokeEvent} event
+ * @param {{ containerId?: string; x?: number; y?: number }} payload — x/y = client/content DIP (from `clientX`/`clientY`)
+ */
+ipcMain.handle("containers:contextMenu", (event, payload) => {
+  const id = String(payload?.containerId ?? "").trim();
+  if (!isValidContainerId(id)) {
+    return;
+  }
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return;
+
+  const dockerBin = config.docker.bin;
+  const template = [
+    {
+      label: "Attach in Terminal",
+      click: () =>
+        launchDockerInTerminal({
+          dockerBin,
+          dockerArgs: ["attach", id],
+        }),
+    },
+    {
+      label: "Shell in Terminal (exec -it /bin/sh)",
+      click: () =>
+        launchDockerInTerminal({
+          dockerBin,
+          dockerArgs: ["exec", "-it", id, "/bin/sh"],
+        }),
+    },
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  const popupOpts = { window: win };
+  const x = Number(payload?.x);
+  const y = Number(payload?.y);
+  if (Number.isFinite(x) && Number.isFinite(y)) {
+    popupOpts.x = Math.round(x);
+    popupOpts.y = Math.round(y);
+  }
+  menu.popup(popupOpts);
+});
 
 /** Reserved for UI; returns stub unless `COLIMA_UI_K8S_ENABLED=1`. */
 ipcMain.handle("kubernetes:getNodes", () => kubernetes.getNodes());

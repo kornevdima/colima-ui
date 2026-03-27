@@ -80,6 +80,7 @@ No separate backend service or database in the POC.
 | **Config** | `lib/config.js` | Env-driven settings (twelve-factor config) |
 | **Logger** | `lib/logger.js` | Structured stdout logs from main |
 | **CLI runner** | `lib/cli.js` | `execFile` wrapper only (no domain parsing) |
+| **Terminal launch** | `lib/terminal-launch.js` | OS-specific spawn of Terminal / cmd / `x-terminal-emulator` for docker CLI |
 | **Colima domain** | `domain/colima/colima-operations.js` | Colima use-cases |
 | **Docker domain** | `domain/docker/docker-operations.js` | Docker use-cases |
 | **Kubernetes domain** | `domain/kubernetes/kubernetes-operations.js` | Future kubectl use-cases |
@@ -124,6 +125,7 @@ sequenceDiagram
 | `docker:ps` | `{ filters?: string[] }` | `docker ps -a …` + `-f` per line → `{ containers[] }` |
 | `docker:images` | `{ filters?: string[] }` | `docker image ls -a …` + one `-f` per `key=value` line → `{ images[] }` |
 | `docker:version` | — | `docker version --format '{{json .}}'` |
+| `containers:contextMenu` | `{ containerId, x?, y? }` | Shows native **Menu**; actions call `lib/terminal-launch.js` (no in-app PTY) |
 | `kubernetes:getNodes` | — | If `COLIMA_UI_K8S_ENABLED=1`: `kubectl get nodes -o json`; else `{ notImplemented: true, … }` |
 
 All responses include at least `{ ok, code, stdout, stderr }` from `runBinary` unless noted; parsers may add fields.

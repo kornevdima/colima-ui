@@ -57,6 +57,7 @@ Runtime behaviour is driven by **environment variables** (no config file in the 
 | `COLIMA_UI_K8S_MEMORY_GIB` | `8` | `--memory` (GiB) for that preset |
 | `COLIMA_UI_K8S_ENABLED` | *(empty)* | Set to `1` to run real `kubectl` from `kubernetes:getNodes` IPC |
 | `COLIMA_UI_LOG_LEVEL` | `info` | `error` / `warn` / `info` / `debug` |
+| `COLIMA_UI_TERMINAL_LINUX` | *(auto)* | Optional Linux terminal binary; if unset, tries **gnome-terminal** then **x-terminal-emulator**, else runs **bash** in background (no window). When set, invoked as `TERM -e bash -lc '<docker cmd>'`. |
 
 Domain layout: **`domain/colima`**, **`domain/docker`**, **`domain/kubernetes`** — see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
 
@@ -85,6 +86,7 @@ Domain layout: **`domain/colima`**, **`domain/docker`**, **`domain/kubernetes`**
 | `lib/config.js` | Env-based configuration |
 | `lib/logger.js` | Structured stdout logging |
 | `lib/cli.js` | `execFile` helper only |
+| `lib/terminal-launch.js` | Spawn system terminal with `docker attach` / `exec` |
 | `domain/colima/colima-operations.js` | Colima use-cases |
 | `domain/docker/docker-operations.js` | Docker use-cases |
 | `domain/kubernetes/kubernetes-operations.js` | Kubernetes stub / optional `kubectl` |
