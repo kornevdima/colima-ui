@@ -1,13 +1,15 @@
 {
   "name": "colima-ui",
   "version": "0.1.0",
-  "private": true,
+  "license": "MIT",
+  "author": "Dmytro Kornev",
+  "private": false,
   "description": "Desktop POC for Colima and Docker (refresh-based)",
   "main": "main.js",
   "scripts": {
     "start": "electron ."
   },
-  "devDependencies": {
-    "electron": "^34.2.0"
+  "dependencies": {
+    "electron": "41.1.0"
   }
 }

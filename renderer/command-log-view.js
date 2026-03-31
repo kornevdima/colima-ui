@@ -41,8 +41,9 @@ export function renderCommandLogTable(tbodyEl, entries) {
       fullCmd.length > CMD_PREVIEW ? `${fullCmd.slice(0, CMD_PREVIEW)}…` : fullCmd;
     const ok = Boolean(e.ok);
     const code = e.code;
-    const exit = ok ? "0" : code != null ? String(code) : "—";
-    const ms = e.durationMs != null ? String(e.durationMs) : "—";
+    const terminalLaunch = Boolean(e.terminalLaunch);
+    const exit = terminalLaunch ? "—" : ok ? "0" : code != null ? String(code) : "—";
+    const ms = terminalLaunch ? "—" : e.durationMs != null ? String(e.durationMs) : "—";
     const errNote = e.error ? String(e.error) : "";
     const stderr = String(e.stderr || "").trim();
     const stderrOne = stderr.split("\n")[0] || "";
