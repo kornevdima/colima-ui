@@ -152,6 +152,14 @@ export function renderK8sPodsTable(tbodyEl, items) {
       spec && typeof spec === "object" && spec.nodeName != null
         ? String(spec.nodeName)
         : "—";
+    const nsRaw = item?.metadata?.namespace;
+    const nameRaw = item?.metadata?.name;
+    const nsStr = nsRaw != null && String(nsRaw).trim() !== "" ? String(nsRaw).trim() : "";
+    const podStr = nameRaw != null && String(nameRaw).trim() !== "" ? String(nameRaw).trim() : "";
+    if (nsStr && podStr) {
+      tr.dataset.podNamespace = nsStr;
+      tr.dataset.podName = podStr;
+    }
     tr.innerHTML = `<td>${escapeHtml(metaNs(item))}</td><td>${escapeHtml(
       metaName(item)
     )}</td><td>${escapeHtml(podPhase(item))}</td><td>${escapeHtml(
@@ -258,6 +266,158 @@ export function renderK8sVirtualServicesTable(tbodyEl, items) {
     )}</td><td title="${escapeHtml(fullHosts)}">${escapeHtml(
       vsHosts(item)
     )}</td><td>${escapeHtml(vsGateways(item))}</td>`;
+    tbodyEl.appendChild(tr);
+  }
+}
+
+/**
+ * @param {Record<string, unknown>} item
+ */
+function serviceType(item) {
+  const spec = item.spec;
+  if (!spec || typeof spec !== "object") return "—";
+  return String(spec.type ?? "—");
+}
+
+/**
+ * @param {Record<string, unknown>} item
+ */
+function serviceClusterIP(item) {
+  const spec = item.spec;
+  if (!spec || typeof spec !== "object") return "—";
+  return String(spec.clusterIP ?? "—");
+}
+
+/**
+ * @param {Record<string, unknown>} item
+ * @returns {string}
+ */
+function servicePortsFull(item) {
+  const spec = item.spec;
+  if (!spec || typeof spec !== "object" || !Array.isArray(spec.ports)) return "";
+  const parts = [];
+  for (const p of spec.ports) {
+    if (!p || typeof p !== "object") continue;
+    const name = p.name != null ? `${String(p.name)}:` : "";
+    const proto = p.protocol && String(p.protocol) !== "TCP" ? `/${String(p.protocol)}` : "";
+    const tgt = p.targetPort != null ? `→${String(p.targetPort)}` : "";
+    parts.push(`${name}${String(p.port ?? "?")}${tgt}${proto}`);
+  }
+  return parts.join(", ");
+}
+
+/**
+ * @param {Record<string, unknown>} item
+ */
+function servicePorts(item) {
+  const full = servicePortsFull(item);
+  return full ? truncate(full, 72) : "—";
+}
+
+/**
+ * @param {Record<string, unknown>} item
+ */
+function serviceExternalIPs(item) {
+  const spec = item.spec;
+  const st = item.status;
+  if (spec && typeof spec === "object" && Array.isArray(spec.externalIPs) && spec.externalIPs.length) {
+    return truncate(spec.externalIPs.map(String).join(", "), 48);
+  }
+  if (st && typeof st === "object" && st.loadBalancer && typeof st.loadBalancer === "object") {
+    const ing = st.loadBalancer.ingress;
+    if (Array.isArray(ing) && ing.length) {
+      const parts = [];
+      for (const x of ing) {
+        if (x && typeof x === "object") {
+          if (x.ip) parts.push(String(x.ip));
+          else if (x.hostname) parts.push(String(x.hostname));
+        }
+      }
+      if (parts.length) return truncate(parts.join(", "), 48);
+    }
+  }
+  return "—";
+}
+
+/**
+ * TCP ports on a Service suitable for `kubectl port-forward … local:port`.
+ * @param {Record<string, unknown>} item
+ * @returns {{ port: number; name: string }[]}
+ */
+/**
+ * `spec.selector` for matching pods behind this Service (used for aggregate `kubectl logs -l`).
+ * @param {Record<string, unknown>} item
+ * @returns {Record<string, string> | null}
+ */
+function servicePodSelectorForLogs(item) {
+  const spec = item.spec;
+  const sel = spec?.selector;
+  if (!sel || typeof sel !== "object" || Array.isArray(sel)) return null;
+  /** @type {Record<string, string>} */
+  const out = {};
+  for (const [k, v] of Object.entries(sel)) {
+    if (v == null) continue;
+    out[String(k)] = String(v);
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+function serviceTcpForwardPorts(item) {
+  const spec = item.spec;
+  if (!spec || typeof spec !== "object" || !Array.isArray(spec.ports)) return [];
+  const out = [];
+  for (const p of spec.ports) {
+    if (!p || typeof p !== "object") continue;
+    const proto = String(p.protocol ?? "TCP").toUpperCase();
+    if (proto !== "TCP") continue;
+    const port = p.port;
+    if (typeof port !== "number" || !Number.isInteger(port) || port < 1 || port > 65535) {
+      continue;
+    }
+    out.push({
+      port,
+      name: p.name != null ? String(p.name) : "",
+    });
+  }
+  return out;
+}
+
+/**
+ * @param {HTMLTableSectionElement} tbodyEl
+ * @param {Record<string, unknown>[]} items
+ */
+export function renderK8sServicesTable(tbodyEl, items) {
+  tbodyEl.innerHTML = "";
+  const rows = Array.isArray(items) ? items : [];
+  if (!rows.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td colspan="6" class="empty">No services (wrong namespace, cluster unreachable, or list empty).</td>';
+    tbodyEl.appendChild(tr);
+    return;
+  }
+  for (const item of rows) {
+    const tr = document.createElement("tr");
+    const portsFull = servicePortsFull(item);
+    const nsRaw = item?.metadata?.namespace;
+    const nameRaw = item?.metadata?.name;
+    const nsStr = nsRaw != null && String(nsRaw).trim() !== "" ? String(nsRaw).trim() : "";
+    const svcStr = nameRaw != null && String(nameRaw).trim() !== "" ? String(nameRaw).trim() : "";
+    if (nsStr && svcStr) {
+      tr.dataset.serviceName = svcStr;
+      tr.dataset.serviceNamespace = nsStr;
+      const fwd = serviceTcpForwardPorts(item);
+      if (fwd.length) tr.dataset.serviceForwardPorts = JSON.stringify(fwd);
+      const logSel = servicePodSelectorForLogs(item);
+      if (logSel) tr.dataset.serviceLogSelector = JSON.stringify(logSel);
+    }
+    tr.innerHTML = `<td>${escapeHtml(metaNs(item))}</td><td>${escapeHtml(
+      metaName(item)
+    )}</td><td>${escapeHtml(serviceType(item))}</td><td>${escapeHtml(
+      serviceClusterIP(item)
+    )}</td><td title="${escapeHtml(portsFull)}">${escapeHtml(
+      servicePorts(item)
+    )}</td><td>${escapeHtml(serviceExternalIPs(item))}</td>`;
     tbodyEl.appendChild(tr);
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Domain: Kubernetes cluster visibility via kubectl (read-only lists).
+ * Domain: Kubernetes via kubectl (list resources; delete pod / service from context menus).
  * Istio CRDs use full API names to avoid clashing with Gateway API.
  */
 
@@ -21,11 +21,9 @@ function parseKubectlListJson(stdout) {
   }
 }
 
-/** @param {{ config: object, log: object }} deps */
+/** @param {{ getConfig: () => object, log: object }} deps */
 function createKubernetesOperations(deps) {
-  const { config, log } = deps;
-  const bin = config.kubernetes.bin;
-  const short = config.timeouts.shortMs;
+  const { getConfig, log } = deps;
 
   function skipResponse() {
     return {
@@ -39,7 +37,10 @@ function createKubernetesOperations(deps) {
   }
 
   async function getNodes() {
-    if (!config.kubernetes.enabled) {
+    const cfg = getConfig();
+    const bin = cfg.kubernetes.bin;
+    const short = cfg.timeouts.shortMs;
+    if (!cfg.kubernetes.enabled) {
       log.debug("kubernetes.getNodes.skipped", { reason: "COLIMA_UI_K8S_ENABLED=0" });
       return skipResponse();
     }
@@ -50,7 +51,10 @@ function createKubernetesOperations(deps) {
   }
 
   async function getPods() {
-    if (!config.kubernetes.enabled) {
+    const cfg = getConfig();
+    const bin = cfg.kubernetes.bin;
+    const short = cfg.timeouts.shortMs;
+    if (!cfg.kubernetes.enabled) {
       return skipResponse();
     }
     log.debug("kubernetes.getPods", { bin });
@@ -60,7 +64,10 @@ function createKubernetesOperations(deps) {
   }
 
   async function getGateways() {
-    if (!config.kubernetes.enabled) {
+    const cfg = getConfig();
+    const bin = cfg.kubernetes.bin;
+    const short = cfg.timeouts.shortMs;
+    if (!cfg.kubernetes.enabled) {
       return skipResponse();
     }
     log.debug("kubernetes.getGateways", { bin });
@@ -74,7 +81,10 @@ function createKubernetesOperations(deps) {
   }
 
   async function getVirtualServices() {
-    if (!config.kubernetes.enabled) {
+    const cfg = getConfig();
+    const bin = cfg.kubernetes.bin;
+    const short = cfg.timeouts.shortMs;
+    if (!cfg.kubernetes.enabled) {
       return skipResponse();
     }
     log.debug("kubernetes.getVirtualServices", { bin });
@@ -87,12 +97,66 @@ function createKubernetesOperations(deps) {
     return { ...r, items, parseError: r.ok ? parseError : undefined };
   }
 
+  /**
+   * @param {{ listNamespaceOverride?: string | null }} [options]
+   * `listNamespaceOverride`: `null`/`undefined` → use config; `""` → `-A`; else `-n <value>`.
+   */
+  async function getServices(options = {}) {
+    const cfg = getConfig();
+    const bin = cfg.kubernetes.bin;
+    const short = cfg.timeouts.shortMs;
+    if (!cfg.kubernetes.enabled) {
+      return skipResponse();
+    }
+    const raw = options.listNamespaceOverride;
+    const ns =
+      raw === undefined || raw === null ? cfg.kubernetes.servicesNamespace : String(raw).trim();
+    const svcArgs =
+      ns === "" ? ["get", "svc", "-A", "-o", "json"] : ["get", "svc", "-n", ns, "-o", "json"];
+    log.debug("kubernetes.getServices", { bin, namespace: ns || "(all)" });
+    const r = await runBinary(bin, svcArgs, { timeoutMs: short });
+    const { items, parseError } = parseKubectlListJson(r.ok ? r.stdout : "");
+    return {
+      ...r,
+      items,
+      parseError: r.ok ? parseError : undefined,
+      servicesListNamespace: ns === "" ? "(all)" : ns,
+    };
+  }
+
+  /**
+   * @param {string} name
+   * @param {string} namespace
+   */
+  async function deletePod(name, namespace) {
+    const cfg = getConfig();
+    const bin = cfg.kubernetes.bin;
+    const long = cfg.timeouts.longMs;
+    log.info("kubernetes.deletePod", { name, namespace });
+    return runBinary(bin, ["delete", "pod", name, "-n", namespace], { timeoutMs: long });
+  }
+
+  /**
+   * @param {string} name
+   * @param {string} namespace
+   */
+  async function deleteService(name, namespace) {
+    const cfg = getConfig();
+    const bin = cfg.kubernetes.bin;
+    const long = cfg.timeouts.longMs;
+    log.info("kubernetes.deleteService", { name, namespace });
+    return runBinary(bin, ["delete", "service", name, "-n", namespace], { timeoutMs: long });
+  }
+
   return {
     getNodes,
     getPods,
     getGateways,
     getVirtualServices,
-    isEnabled: () => config.kubernetes.enabled,
+    getServices,
+    deletePod,
+    deleteService,
+    isEnabled: () => getConfig().kubernetes.enabled,
   };
 }
 

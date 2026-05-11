@@ -185,6 +185,7 @@ Each major section is a `<section class="view">`. Hidden views use `**.view--hid
 | `data-container-ports` | Raw **Ports** cell for parsing **http://** URLs (published bindings)         |
 | `data-image-id`      | Image ID / digest → context menu (**remove** → `docker rmi -f`)                     |
 | `onDockerMutation`   | Preload subscription: main sends **`docker:mutation`** after rm/rmi → refresh UI    |
+| `onKubernetesMutation` | Preload subscription: main sends **`kubernetes:mutation`** after kubectl delete pod/service → refresh UI |
 
 
 ---

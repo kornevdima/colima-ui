@@ -10,6 +10,8 @@ const VIEWS = [
   "kubernetes-pods",
   "kubernetes-gateways",
   "kubernetes-virtualservices",
+  "kubernetes-services",
+  "app-settings",
   "app-logs",
 ];
 
@@ -25,6 +27,7 @@ const VIEW_TO_GROUP = {
   "kubernetes-pods": "kubernetes",
   "kubernetes-gateways": "kubernetes",
   "kubernetes-virtualservices": "kubernetes",
+  "kubernetes-services": "kubernetes",
 };
 
 const GROUPS = ["colima", "docker", "kubernetes"];
@@ -110,7 +113,11 @@ export function setActiveNav(view) {
     const btn = document.getElementById(`nav-${id}`);
     if (!btn) continue;
     const active = id === view;
-    btn.classList.toggle("nav-item--active", active);
+    if (btn.classList.contains("nav-item")) {
+      btn.classList.toggle("nav-item--active", active);
+    } else {
+      btn.classList.toggle("sidebar-tool-active", active);
+    }
     if (active) btn.setAttribute("aria-current", "page");
     else btn.removeAttribute("aria-current");
   }

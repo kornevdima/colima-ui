@@ -11,7 +11,10 @@ import { applyColimaUiDefaultsToForm } from "./colima-view.js";
 import { wireContainerRowContextMenu } from "./containers-context.js";
 import { wireImageRowContextMenu } from "./images-context.js";
 import { wireVolumeRowContextMenu } from "./volumes-context.js";
+import { wirePodRowContextMenu } from "./pods-context.js";
+import { wireServiceRowContextMenu } from "./services-context.js";
 import { renderCommandLogTable } from "./command-log-view.js";
+import { loadSettingsIntoView, wireSettingsView } from "./settings-view.js";
 
 function setStatus(el, message, isError) {
   el.textContent = message;
@@ -69,6 +72,12 @@ function main() {
   const k8sVsTbody = /** @type {HTMLTableSectionElement} */ (
     document.querySelector("#k8s-vs-table tbody")
   );
+  const k8sServicesSummary = $("k8s-services-summary");
+  const k8sServicesTbody = /** @type {HTMLTableSectionElement} */ (
+    document.querySelector("#k8s-services-table tbody")
+  );
+  const k8sServicesNsMode = /** @type {HTMLSelectElement} */ ($("k8s-services-ns-mode"));
+  const k8sServicesNsCustom = /** @type {HTMLInputElement} */ ($("k8s-services-ns-custom"));
 
   let activeView = "colima-runtime";
 
@@ -100,6 +109,10 @@ function main() {
     k8sGatewaysTbody,
     k8sVsSummary,
     k8sVsTbody,
+    k8sServicesSummary,
+    k8sServicesTbody,
+    k8sServicesNsMode,
+    k8sServicesNsCustom,
   };
 
   async function refresh() {
@@ -125,6 +138,9 @@ function main() {
     setActiveNav(view);
     showView(view);
     syncAccordionForView(view);
+    if (view === "app-settings") {
+      loadSettingsIntoView(window.colimaUi).catch(() => {});
+    }
     if (view === "app-logs") {
       loadCommandLog().catch(() => {});
     }
@@ -133,6 +149,14 @@ function main() {
   setupSidebar({
     onRefresh: () => refresh(),
     onNavigate: (view) => navigate(view),
+  });
+
+  wireSettingsView({
+    api: window.colimaUi,
+    refresh,
+    colimaRuntimeRoot,
+    applyColimaDefaults: applyColimaUiDefaultsToForm,
+    setStatus: (msg, err) => setStatus(statusLine, msg, err),
   });
 
   wireColimaActions({
@@ -154,9 +178,25 @@ function main() {
   wireContainerRowContextMenu(containersTbody);
   wireImageRowContextMenu(imagesTbody);
   wireVolumeRowContextMenu(volumesTbody);
+  wirePodRowContextMenu(k8sPodsTbody);
+  wireServiceRowContextMenu(k8sServicesTbody);
+
+  function syncK8sServicesCustomField() {
+    const on = k8sServicesNsMode.value === "custom";
+    k8sServicesNsCustom.disabled = !on;
+    k8sServicesNsCustom.classList.toggle("k8s-services-ns-custom--disabled", !on);
+  }
+  k8sServicesNsMode.addEventListener("change", syncK8sServicesCustomField);
+  syncK8sServicesCustomField();
 
   if (api?.onDockerMutation) {
     api.onDockerMutation(() => {
+      refresh().catch(() => {});
+    });
+  }
+
+  if (api?.onKubernetesMutation) {
+    api.onKubernetesMutation(() => {
       refresh().catch(() => {});
     });
   }

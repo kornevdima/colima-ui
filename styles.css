@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   --bg: #0f1115;
   --bg-elevated: #161a22;
   --border: #2a3140;
@@ -10,6 +11,9 @@
   --radius: 10px;
   --font: "DM Sans", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, monospace;
+  /* Scrollbar thumb — single hue so focus/active doesn’t switch to system “accent” */
+  --scrollbar-thumb: rgba(107, 118, 140, 0.55);
+  --scrollbar-thumb-hover: rgba(127, 138, 162, 0.75);
 }
 
 * {
@@ -58,6 +62,11 @@ body {
   align-items: center;
   flex-shrink: 0;
   margin-bottom: 20px;
+}
+
+.sidebar-brand-copy {
+  flex: 1;
+  min-width: 0;
 }
 
 .sidebar-title {
@@ -283,6 +292,120 @@ body {
   margin-bottom: 16px;
 }
 
+.label-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.88rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.label-row input[type="checkbox"] {
+  margin-top: 3px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+
+.field-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.settings-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.settings-file-line {
+  margin-bottom: 12px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  word-break: break-word;
+}
+
+.settings-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 40rem;
+}
+
+.settings-fieldset {
+  margin: 0;
+  padding: 16px 18px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.settings-legend {
+  padding: 0 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.settings-field-row {
+  margin-bottom: 14px;
+}
+
+.settings-field-row:last-child {
+  margin-bottom: 4px;
+}
+
+.settings-env-code {
+  font-size: 0.68rem;
+}
+
+.settings-baseline {
+  font-size: 0.72rem;
+}
+
+.settings-override-tag {
+  color: #c9a227;
+  font-weight: 600;
+}
+
+.settings-input-narrow {
+  max-width: 12rem;
+}
+
+.settings-bool-label {
+  font-weight: 500;
+}
+
+.k8s-services-toolbar {
+  max-width: 38rem;
+}
+
+.k8s-services-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.k8s-services-toolbar-row .k8s-services-ns-mode {
+  min-width: 11rem;
+  flex: 0 0 auto;
+}
+
+.k8s-services-toolbar-row .k8s-services-ns-custom {
+  flex: 1 1 12rem;
+  min-width: 10rem;
+}
+
+.k8s-services-ns-custom--disabled {
+  opacity: 0.45;
+}
+
 .input-textarea {
   font-family: var(--mono);
   font-size: 0.78rem;
@@ -342,6 +465,65 @@ body {
   padding: 24px 28px 36px;
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+/* Consistent scrollbars (Chromium/Electron + Firefox); avoids focus-driven color jump on macOS overlay bars */
+.main,
+.sidebar-nav,
+.table-wrap,
+.mono-block,
+.template-yaml-block {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.main::-webkit-scrollbar,
+.sidebar-nav::-webkit-scrollbar,
+.table-wrap::-webkit-scrollbar,
+.mono-block::-webkit-scrollbar,
+.template-yaml-block::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.main::-webkit-scrollbar-track,
+.sidebar-nav::-webkit-scrollbar-track,
+.table-wrap::-webkit-scrollbar-track,
+.mono-block::-webkit-scrollbar-track,
+.template-yaml-block::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.main::-webkit-scrollbar-thumb,
+.sidebar-nav::-webkit-scrollbar-thumb,
+.table-wrap::-webkit-scrollbar-thumb,
+.mono-block::-webkit-scrollbar-thumb,
+.template-yaml-block::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.main::-webkit-scrollbar-thumb:hover,
+.sidebar-nav::-webkit-scrollbar-thumb:hover,
+.table-wrap::-webkit-scrollbar-thumb:hover,
+.mono-block::-webkit-scrollbar-thumb:hover,
+.template-yaml-block::-webkit-scrollbar-thumb:hover,
+.main::-webkit-scrollbar-thumb:active,
+.sidebar-nav::-webkit-scrollbar-thumb:active,
+.table-wrap::-webkit-scrollbar-thumb:active,
+.mono-block::-webkit-scrollbar-thumb:active,
+.template-yaml-block::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+.main::-webkit-scrollbar-corner,
+.sidebar-nav::-webkit-scrollbar-corner,
+.table-wrap::-webkit-scrollbar-corner,
+.mono-block::-webkit-scrollbar-corner,
+.template-yaml-block::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 .view--hidden {
@@ -425,7 +607,7 @@ select {
   border-color: #3d4658;
 }
 
-#nav-app-logs.nav-item--active {
+.sidebar-tools .sidebar-tool-active {
   color: var(--text);
   background: rgba(61, 154, 118, 0.12);
   border-color: rgba(61, 154, 118, 0.4);

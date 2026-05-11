@@ -58,14 +58,14 @@ function sanitizeKubernetesVersion(s) {
   return t;
 }
 
-/** @param {{ config: object, log: object }} deps */
+/** @param {{ getConfig: () => object, log: object }} deps */
 function createColimaOperations(deps) {
-  const { config, log } = deps;
-  const bin = config.colima.bin;
-  const short = config.timeouts.shortMs;
-  const long = config.timeouts.longMs;
+  const { getConfig, log } = deps;
 
   async function listInstances() {
+    const cfg = getConfig();
+    const bin = cfg.colima.bin;
+    const short = cfg.timeouts.shortMs;
     log.debug("colima.listInstances", { bin });
     const r = await runBinary(bin, ["list", "-j"], { timeoutMs: short });
     if (!r.stdout.trim()) {
@@ -81,6 +81,9 @@ function createColimaOperations(deps) {
   }
 
   async function getStatus(profile) {
+    const cfg = getConfig();
+    const bin = cfg.colima.bin;
+    const short = cfg.timeouts.shortMs;
     const args = ["status", "-j"];
     if (profile) args.push(profile);
     log.debug("colima.getStatus", { bin, profile: profile ?? null });
@@ -104,6 +107,9 @@ function createColimaOperations(deps) {
    * }} [options]
    */
   async function start(options = {}) {
+    const cfg = getConfig();
+    const bin = cfg.colima.bin;
+    const long = cfg.timeouts.longMs;
     const { profile, preset } = options;
     const raw =
       options.startOptions && typeof options.startOptions === "object"
@@ -112,7 +118,7 @@ function createColimaOperations(deps) {
     const args = ["start"];
 
     if (preset === "kubernetes") {
-      const k = config.colima.startKubernetes;
+      const k = cfg.colima.startKubernetes;
       const cpu = clampIntStr(raw.cpu, k.cpu, 1, 128);
       const memory = clampFloatStr(raw.memoryGiB, k.memoryGiB, 0.5, 512);
       const disk = clampIntStr(raw.diskGiB, k.diskGiB, 10, 2000);
@@ -120,7 +126,7 @@ function createColimaOperations(deps) {
       const kVer = sanitizeKubernetesVersion(raw.kubernetesVersion ?? k.kubernetesVersion);
       if (kVer) args.push("--kubernetes-version", kVer);
     } else {
-      const d = config.colima.startDefaults;
+      const d = cfg.colima.startDefaults;
       const cpu = clampIntStr(raw.cpu, d.cpu, 1, 128);
       const memory = clampFloatStr(raw.memoryGiB, d.memoryGiB, 0.5, 512);
       const disk = clampIntStr(raw.diskGiB, d.diskGiB, 10, 2000);
@@ -135,6 +141,9 @@ function createColimaOperations(deps) {
   }
 
   async function stop(options = {}) {
+    const cfg = getConfig();
+    const bin = cfg.colima.bin;
+    const long = cfg.timeouts.longMs;
     const { profile } = options;
     const args = ["stop"];
     if (profile) args.push("-p", profile);
@@ -143,6 +152,9 @@ function createColimaOperations(deps) {
   }
 
   async function getVersion() {
+    const cfg = getConfig();
+    const bin = cfg.colima.bin;
+    const short = cfg.timeouts.shortMs;
     log.debug("colima.getVersion", { bin });
     return runBinary(bin, ["version"], { timeoutMs: short });
   }
@@ -152,6 +164,9 @@ function createColimaOperations(deps) {
    * @returns {Promise<object & { path: string | null; content: string | null; readError: string | null }>}
    */
   async function getTemplate() {
+    const cfg = getConfig();
+    const bin = cfg.colima.bin;
+    const short = cfg.timeouts.shortMs;
     log.debug("colima.getTemplate", { bin });
     const r = await runBinary(bin, ["template", "--print"], { timeoutMs: short });
     const filePath = r.stdout.trim().split(/\r?\n/)[0]?.trim() ?? "";
@@ -170,12 +185,39 @@ function createColimaOperations(deps) {
       const content = await fs.readFile(filePath, "utf8");
       return { ...r, path: filePath, content, readError: null };
     } catch (e) {
-      return {
-        ...r,
-        path: filePath,
-        content: null,
-        readError: String(e.message || e),
-      };
+      const code = e && typeof e === "object" ? e.code : undefined;
+      if (code !== "ENOENT") {
+        return {
+          ...r,
+          path: filePath,
+          content: null,
+          readError: String(e.message || e),
+        };
+      }
+      // Fresh Colima install: path is known but `default.yaml` is not created until the user
+      // runs `colima template` (there is no `template --init`). `template --editor true` exits
+      // immediately after Colima opens the temp file; Colima still validates and saves defaults.
+      log.info("colima.getTemplate.seed_missing_file", { path: filePath });
+      const seed = await runBinary(bin, ["template", "--editor", "true"], { timeoutMs: short });
+      if (!seed.ok) {
+        return {
+          ...r,
+          path: filePath,
+          content: null,
+          readError: `template file missing; could not create default (${seed.stderr?.trim() || seed.error || "unknown"})`,
+        };
+      }
+      try {
+        const content = await fs.readFile(filePath, "utf8");
+        return { ...r, path: filePath, content, readError: null };
+      } catch (e2) {
+        return {
+          ...r,
+          path: filePath,
+          content: null,
+          readError: String(e2.message || e2),
+        };
+      }
     }
   }
 

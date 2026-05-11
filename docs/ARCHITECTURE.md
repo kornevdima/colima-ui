@@ -50,7 +50,7 @@ Heroku’s [twelve-factor](https://12factor.net/) targets server apps; here we a
 |--------|----------------------|
 | **I. Codebase** | One repo; domains under `domain/`. |
 | **II. Dependencies** | Declared in `package.json`; no implicit global modules in app code. |
-| **III. Config** | **Environment only** — `lib/config.js` reads `process.env` with defaults (binary paths, timeouts, log level, K8s feature flag). No checked-in secrets or per-machine config files for runtime. |
+| **III. Config** | **Environment at launch** — `lib/config.js` reads `process.env` with defaults. **Optional overrides** — `user-settings.json` in Electron **userData** (via `lib/user-settings.js`) merge on top for the same keys enumerated in `lib/config-fields.js`; **Settings** view edits those overrides. Env remains the baseline for tests and CI. |
 | **IV. Backing services** | **Colima / Docker / kubectl** are *attached resources*: paths configurable via env (`COLIMA_UI_*_BIN`), swappable like URLs in cloud apps. |
 | **V. Build, release, run** | Build: `npm install`; run: `npm start`. (Packaging **[TBD]**.) |
 | **VI. Processes** | One main window process + stateless IPC handlers; long work is subprocess-bound, not in-memory state machines. |
@@ -77,7 +77,11 @@ No separate backend service or database in the POC.
 | Component | Path | Role |
 |-----------|------|------|
 | **Main process** | `main.js` | Compose config + logger + domain factories; register IPC; no business logic |
-| **Config** | `lib/config.js` | Env-driven settings (twelve-factor config) |
+| **Config (baseline)** | `lib/config.js` | Env-driven defaults at process start |
+| **Config map** | `lib/config-fields.js` | Each `COLIMA_UI_*` → config path + type (UI + merge) |
+| **User overrides** | `lib/user-settings.js` | Load/save `user-settings.json`; sanitize keys |
+| **Effective config** | `lib/runtime-config.js` | Baseline + overrides for all main-process consumers |
+| **Settings presenter** | `lib/settings-presenter.js` | Grouped field model for IPC → renderer |
 | **Logger** | `lib/logger.js` | Structured stdout logs from main |
 | **CLI runner** | `lib/cli.js` | `execFile` wrapper; optional **`setAfterRunHook`** feeds **`lib/command-log.js`** |
 | **Command log** | `lib/command-log.js` | In-memory ring buffer + broadcast to renderer for **Logs** view |
@@ -88,7 +92,7 @@ No separate backend service or database in the POC.
 | **Kubernetes domain** | `domain/kubernetes/kubernetes-operations.js` | `kubectl get` JSON → `items[]` for UI tables |
 | **Preload** | `preload.js` | `colimaUi.*` → `ipcRenderer.invoke` |
 | **Renderer** | `renderer/app.js` (ES module entry) | Compose sidebar navigation, refresh, Colima actions |
-| **Renderer modules** | `renderer/sidebar.js`, `renderer/refresh.js`, `renderer/colima-view.js`, `renderer/docker-view.js`, `renderer/k8s-view.js`, `renderer/command-log-view.js`, `renderer/*-context.js`, `renderer/colima-actions.js`, `renderer/utils.js` | Section nav, data fetch/render split by domain |
+| **Renderer modules** | `renderer/sidebar.js`, `renderer/refresh.js`, `renderer/settings-view.js`, `renderer/colima-view.js`, `renderer/docker-view.js`, `renderer/k8s-view.js`, `renderer/command-log-view.js`, `renderer/*-context.js`, `renderer/colima-actions.js`, `renderer/utils.js` | Section nav, Settings form, data fetch/render by domain |
 | **Presentation** | `index.html`, `styles.css` | Shell + sidebar layout, view panels |
 
 ---
@@ -121,9 +125,9 @@ sequenceDiagram
 | `colima:list` | — | `colima list -j` → `{ ok, code, stdout, stderr, instances[], parseError? }` |
 | `colima:status` | `profile?: string` | `colima status -j [profile]` → `{ ok, code, stdout, stderr, status }` |
 | `colima:start` | `{ profile?, preset?: null \| "kubernetes", startOptions?: { cpu, memoryGiB, diskGiB, runtime, vmType, kubernetesVersion? } }` | `colima start …` long timeout; options merged with env defaults (`lib/config.js`) |
-| `colima:uiDefaults` | — | `{ startDefaults, startKubernetes, templateEditor }` for the Runtime form |
+| `colima:uiDefaults` | — | `{ startDefaults, startKubernetes, templateEditor }` from **effective** config for the Runtime form |
 | `colima:template` | — | `colima template --print` + read file → `{ path, content?, readError? }` |
-| `colima:templateEditInTerminal` | — | Resolves template path, spawns system terminal with `COLIMA_UI_TEMPLATE_EDITOR` + path (default `vim`) |
+| `colima:templateEditInTerminal` | — | Resolves template path, spawns system terminal with **effective** `templateEditor` + path |
 | `colima:stop` | `{ profile? }` | `colima stop …` long timeout |
 | `colima:version` | — | `colima version` |
 | `docker:info` | — | `docker info --format '{{json .}}'` → `{ info }` |
@@ -135,12 +139,19 @@ sequenceDiagram
 | `containers:contextMenu` | `{ containerId, browserUrls?, x?, y? }` | Native **Menu**: attach/exec/**tail logs** (`docker logs -f --tail 200`) → terminal; **Open in browser** → `shell.openExternal` (parsed published ports); **Remove** → `docker rm -f` → **`docker:mutation`** |
 | `images:contextMenu` | `{ imageId, x?, y? }` | Native **Menu**: **Remove image** → confirm → `docker rmi -f` → **`docker:mutation`** |
 | `volumes:contextMenu` | `{ volumeName, x?, y? }` | Native **Menu**: **Remove volume** → confirm → `docker volume rm -f` → **`docker:mutation`** |
+| `pods:contextMenu` | `{ podName, namespace, x?, y? }` | Native **Menu**: **Shell** → `kubectl exec -it … -n … -- /bin/sh`; **Tail logs** → `kubectl logs -f --tail 200` (system terminal); **Stop pod** → confirm → `kubectl delete pod -n …` → **`kubernetes:mutation`** |
+| `services:contextMenu` | `{ serviceName, namespace, ports: { port, name? }[], logSelector?: Record<string,string>, x?, y? }` | **Port-forward** per TCP port → `kubectl port-forward …`; **Tail logs** → `kubectl logs -f -n … -l <spec.selector> --prefix --all-containers` when selector is present and passes validation; **Stop service** → confirm → `kubectl delete service -n …` → **`kubernetes:mutation`** |
 | *(main → renderer)* `docker:mutation` | — | Fired after successful **rm** / **rmi** / **volume rm** so UI can **refresh** lists |
+| *(main → renderer)* `kubernetes:mutation` | — | Fired after successful **`kubectl delete pod`** / **`kubectl delete service`** so UI can **refresh** K8s tables |
 | `command-log:get` | — | `{ entries[] }` — ring buffer of `runBinary` invocations (timestamp, bin, args, ok, code, stderr snippet, durationMs, …) |
 | `command-log:clear` | — | Clears buffer; *(main → renderer)* **`command-log:cleared`** |
 | *(main → renderer)* `command-log:append` | — | After each **`lib/cli.js`** completion; Logs view refreshes when open |
+| `settings:get` | — | `{ ok, sections[], settingsFilePath }` — grouped fields with effective values, env-at-launch baseline, override flags |
+| `settings:set` | `{ values: Record<envVar, string \| number \| boolean> }` | Recomputes overrides (drops keys matching env baseline), persists, returns `{ ok }` |
+| `settings:reset` | — | Clears all overrides; returns `{ ok }` |
 | `kubernetes:getNodes` | — | `kubectl get nodes -o json` → `{ items[] }` when enabled; else `{ ok, items: [], skipped: true }` |
 | `kubernetes:getPods` | — | `kubectl get pods -A -o json` → `{ items[] }` |
+| `kubernetes:getServices` | `{ listNamespaceOverride?: string \| null }` | `null`/omit → **effective** Settings namespace; `""` → `-A`; else `-n <value>`. Response includes **`servicesListNamespace`** label for the UI |
 | `kubernetes:getGateways` | — | `kubectl get gateway.networking.istio.io -A -o json` → `{ items[] }` (Istio) |
 | `kubernetes:getVirtualServices` | — | `kubectl get virtualservice.networking.istio.io -A -o json` → `{ items[] }` |
 
@@ -167,10 +178,10 @@ All responses include at least `{ ok, code, stdout, stderr }` from `runBinary` u
 - **Decision:** No background polling or file watchers.  
 - **Consequences:** Lower complexity and battery use; user must click **Refresh** after external CLI changes.
 
-### ADR-004 — Domain modules + env-only config
+### ADR-004 — Domain modules + env baseline + optional user overrides
 
-- **Decision:** Split **Colima**, **Docker**, and **Kubernetes** into separate `domain/*` factories; read **all** tunables from `process.env` in `lib/config.js`.  
-- **Consequences:** Clear boundaries for future `kubectl` UI; tests can inject deps; no silent machine-specific config in git.
+- **Decision:** Split **Colima**, **Docker**, and **Kubernetes** into separate `domain/*` factories; read **baseline** tunables from `process.env` in `lib/config.js`. Domain factories take **`getConfig()`** returning **effective** config (`lib/runtime-config.js`: baseline merged with `user-settings.json`).  
+- **Consequences:** Clear boundaries; twelve-factor env remains the source of truth at launch; desktop users can override without shell env via **Settings**.
 
 ---
 
@@ -205,7 +216,7 @@ All responses include at least `{ ok, code, stdout, stderr }` from `runBinary` u
 - **Kubernetes** mutations (apply, delete, port-forward UI), **Gateway API** resources, non-Istio gateways.  
 - **Streaming logs** for `colima start` (switch to `spawn`, IPC events).  
 - **Packaging** (electron-builder) and code signing.  
-- **Settings UI** that writes env or uses `electron-store` (today: env only).
+- **Richer settings** (validation UI, import/export, per-profile overrides) beyond the flat env-key form.
 
 ---
 

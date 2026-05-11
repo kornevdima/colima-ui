@@ -21,6 +21,7 @@ import {
   renderK8sPodsTable,
   renderK8sGatewaysTable,
   renderK8sVirtualServicesTable,
+  renderK8sServicesTable,
 } from "./k8s-view.js";
 
 /**
@@ -53,8 +54,29 @@ import {
  *   k8sGatewaysTbody: HTMLTableSectionElement;
  *   k8sVsSummary: HTMLElement;
  *   k8sVsTbody: HTMLTableSectionElement;
+ *   k8sServicesSummary: HTMLElement;
+ *   k8sServicesTbody: HTMLTableSectionElement;
+ *   k8sServicesNsMode: HTMLSelectElement;
+ *   k8sServicesNsCustom: HTMLInputElement;
  * }} els
  */
+
+/**
+ * @param {{
+ *   k8sServicesNsMode: HTMLSelectElement;
+ *   k8sServicesNsCustom: HTMLInputElement;
+ * }} els
+ */
+function buildKubernetesServicesQuery(els) {
+  const mode = els.k8sServicesNsMode?.value ?? "settings";
+  if (mode === "all") return { listNamespaceOverride: "" };
+  if (mode === "custom") {
+    const t = els.k8sServicesNsCustom?.value?.trim() ?? "";
+    return { listNamespaceOverride: t === "" ? null : t };
+  }
+  return { listNamespaceOverride: null };
+}
+
 export async function refreshAll(api, els) {
   els.statusLine.textContent = "Loading…";
   els.statusLine.classList.remove("error");
@@ -80,6 +102,7 @@ export async function refreshAll(api, els) {
     networksRes,
     k8sNodesRes,
     k8sPodsRes,
+    k8sSvcRes,
     k8sGwRes,
     k8sVsRes,
     templateRes,
@@ -96,6 +119,9 @@ export async function refreshAll(api, els) {
       : Promise.resolve({ ok: false, networks: [], stderr: "" }),
     api.kubernetesGetNodes ? api.kubernetesGetNodes() : Promise.resolve(k8sStub),
     api.kubernetesGetPods ? api.kubernetesGetPods() : Promise.resolve(k8sStub),
+    api.kubernetesGetServices
+      ? api.kubernetesGetServices(buildKubernetesServicesQuery(els))
+      : Promise.resolve(k8sStub),
     api.kubernetesGetGateways ? api.kubernetesGetGateways() : Promise.resolve(k8sStub),
     api.kubernetesGetVirtualServices
       ? api.kubernetesGetVirtualServices()
@@ -125,6 +151,14 @@ export async function refreshAll(api, els) {
   renderK8sNodesTable(els.k8sNodesTbody, k8sNodesRes.items || []);
   renderK8sCountSummary(els.k8sPodsSummary, k8sPodsRes.items || [], "Pods (all namespaces)");
   renderK8sPodsTable(els.k8sPodsTbody, k8sPodsRes.items || []);
+  const svcSummaryLabel =
+    k8sSvcRes &&
+    !k8sSvcRes.skipped &&
+    typeof k8sSvcRes.servicesListNamespace === "string"
+      ? `Services (${k8sSvcRes.servicesListNamespace})`
+      : "Services";
+  renderK8sCountSummary(els.k8sServicesSummary, k8sSvcRes.items || [], svcSummaryLabel);
+  renderK8sServicesTable(els.k8sServicesTbody, k8sSvcRes.items || []);
   renderK8sCountSummary(els.k8sGatewaysSummary, k8sGwRes.items || [], "Istio Gateways");
   renderK8sGatewaysTable(els.k8sGatewaysTbody, k8sGwRes.items || []);
   renderK8sCountSummary(els.k8sVsSummary, k8sVsRes.items || [], "Istio VirtualServices");
@@ -167,6 +201,11 @@ export async function refreshAll(api, els) {
   }
   if (k8sPodsRes && !k8sPodsRes.skipped && !k8sPodsRes.ok && k8sPodsRes.stderr) {
     issues.push(`kubectl get pods: ${k8sPodsRes.stderr.trim()}`);
+  }
+  if (k8sSvcRes && !k8sSvcRes.skipped && !k8sSvcRes.ok && k8sSvcRes.stderr) {
+    issues.push(`kubectl get svc: ${k8sSvcRes.stderr.trim()}`);
+  } else if (k8sSvcRes?.parseError) {
+    issues.push(`kubectl services JSON: ${k8sSvcRes.parseError}`);
   }
   if (k8sGwRes && !k8sGwRes.skipped && !k8sGwRes.ok && k8sGwRes.stderr) {
     issues.push(`kubectl get gateway (Istio): ${k8sGwRes.stderr.trim()}`);

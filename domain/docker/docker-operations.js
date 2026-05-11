@@ -23,13 +23,14 @@ function expandDockerFilterArgs(filters) {
   return out;
 }
 
-/** @param {{ config: object, log: object }} deps */
+/** @param {{ getConfig: () => object, log: object }} deps */
 function createDockerOperations(deps) {
-  const { config, log } = deps;
-  const bin = config.docker.bin;
-  const short = config.timeouts.shortMs;
+  const { getConfig, log } = deps;
 
   async function getInfo() {
+    const cfg = getConfig();
+    const bin = cfg.docker.bin;
+    const short = cfg.timeouts.shortMs;
     log.debug("docker.getInfo", { bin });
     const r = await runBinary(bin, ["info", "--format", "{{json .}}"], {
       timeoutMs: short,
@@ -49,6 +50,9 @@ function createDockerOperations(deps) {
    * @param {{ filters?: string[] }} [options]
    */
   async function listContainers(options = {}) {
+    const cfg = getConfig();
+    const bin = cfg.docker.bin;
+    const short = cfg.timeouts.shortMs;
     const raw = options.filters;
     const filters = Array.isArray(raw) ? raw : [];
     const args = ["ps", "-a", "--no-trunc", "--format", "{{json .}}"];
@@ -75,6 +79,9 @@ function createDockerOperations(deps) {
    * @param {{ filters?: string[] }} [options]
    */
   async function listImages(options = {}) {
+    const cfg = getConfig();
+    const bin = cfg.docker.bin;
+    const short = cfg.timeouts.shortMs;
     const raw = options.filters;
     const filters = Array.isArray(raw) ? raw : [];
     const args = ["image", "ls", "-a", "--no-trunc", "--format", "{{json .}}"];
@@ -97,6 +104,9 @@ function createDockerOperations(deps) {
   }
 
   async function getVersion() {
+    const cfg = getConfig();
+    const bin = cfg.docker.bin;
+    const short = cfg.timeouts.shortMs;
     log.debug("docker.getVersion", { bin });
     return runBinary(bin, ["version", "--format", "{{json .}}"], {
       timeoutMs: short,
@@ -104,11 +114,17 @@ function createDockerOperations(deps) {
   }
 
   async function removeContainer(containerId) {
+    const cfg = getConfig();
+    const bin = cfg.docker.bin;
+    const short = cfg.timeouts.shortMs;
     log.info("docker.removeContainer", { id: String(containerId).slice(0, 14) });
     return runBinary(bin, ["rm", "-f", containerId], { timeoutMs: short });
   }
 
   async function removeImage(imageId) {
+    const cfg = getConfig();
+    const bin = cfg.docker.bin;
+    const short = cfg.timeouts.shortMs;
     log.info("docker.removeImage", { id: String(imageId).slice(0, 22) });
     return runBinary(bin, ["rmi", "-f", imageId], { timeoutMs: short });
   }
@@ -118,6 +134,9 @@ function createDockerOperations(deps) {
    * @param {{ filters?: string[] }} [options]
    */
   async function listVolumes(options = {}) {
+    const cfg = getConfig();
+    const bin = cfg.docker.bin;
+    const short = cfg.timeouts.shortMs;
     const raw = options.filters;
     const filters = Array.isArray(raw) ? raw : [];
     const args = ["volume", "ls", "--format", "{{json .}}"];
@@ -140,6 +159,9 @@ function createDockerOperations(deps) {
   }
 
   async function removeVolume(volumeName) {
+    const cfg = getConfig();
+    const bin = cfg.docker.bin;
+    const short = cfg.timeouts.shortMs;
     log.info("docker.removeVolume", { name: String(volumeName).slice(0, 32) });
     return runBinary(bin, ["volume", "rm", "-f", volumeName], { timeoutMs: short });
   }
@@ -149,6 +171,9 @@ function createDockerOperations(deps) {
    * @param {{ filters?: string[] }} [options]
    */
   async function listNetworks(options = {}) {
+    const cfg = getConfig();
+    const bin = cfg.docker.bin;
+    const short = cfg.timeouts.shortMs;
     const raw = options.filters;
     const filters = Array.isArray(raw) ? raw : [];
     const args = ["network", "ls", "--no-trunc", "--format", "{{json .}}"];

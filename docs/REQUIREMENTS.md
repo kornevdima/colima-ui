@@ -45,16 +45,17 @@ Developers running **Colima** and **Docker** locally want a **small desktop util
 | **FR-14** | The system shall list **Docker volumes** (`docker volume ls`) with optional **filters** and a **native context menu** to **remove** a volume (`docker volume rm -f`) with confirmation; successful removal shall refresh lists. | Should | Implemented | **Docker · Volumes**; IPC `docker:volumes`, `volumes:contextMenu` |
 | **FR-15** | The system shall list **Docker networks** (`docker network ls --no-trunc`) with optional **filters** (`docker network ls -f`). | Should | Implemented | **Docker · Networks**; IPC `docker:networks` |
 | **FR-16** | For **container** rows, the system shall offer a **native context menu**: **Attach** and **interactive shell** (`exec -it /bin/sh`) in the **system terminal**, **tail logs** (`docker logs -f --tail 200`) in the terminal, **open published HTTP(S) URLs** in the default browser where parsed from port bindings, and **remove** the container (`docker rm -f`) with confirmation. | Should | Implemented | `main.js` `containers:contextMenu`, `lib/terminal-launch.js`, `renderer/docker-ports.js` |
-| **FR-17** | The UI shall provide **section navigation**: collapsible **Colima**, **Docker**, and **Kubernetes** groups; **Colima** — **Runtime**, **Profiles**, **Template**; **Docker** — **Containers**, **Images**, **Volumes**, **Networks**; **Kubernetes** — **Nodes**, **Pods**, **Gateways** (Istio), **VirtualServices** (Istio); **Logs** under Refresh opens the **command log** view. | Should | Implemented | `renderer/sidebar.js`, `index.html`, `styles.css` |
+| **FR-17** | The UI shall provide **section navigation**: collapsible **Colima**, **Docker**, and **Kubernetes** groups; **Colima** — **Runtime**, **Profiles**, **Template**; **Docker** — **Containers**, **Images**, **Volumes**, **Networks**; **Kubernetes** — **Nodes**, **Pods**, **Services**, **Gateways** (Istio), **VirtualServices** (Istio); sidebar **Settings** opens the **Settings** view; **Logs** opens the **command log** view. | Should | Implemented | `renderer/sidebar.js`, `index.html`, `styles.css` |
 | **FR-18** | The system shall expose **Colima default instance template**: resolve path via `colima template --print`, show file contents on **Template**, and open **`COLIMA_UI_TEMPLATE_EDITOR`** (default `vim`) on that path in the **system terminal**. | Should | Implemented | IPC `colima:template`, `colima:templateEditInTerminal`; `domain/colima/colima-operations.js` |
 | **FR-19** | The system shall record each **`lib/cli.js`** subprocess completion in an **in-memory ring buffer** and let the user **view** and **clear** the log from the **Logs** view; new entries may be **pushed** to the renderer when the log view is relevant. | Should | Implemented | `lib/command-log.js`, `lib/cli.js` `setAfterRunHook`, IPC `command-log:*`, `renderer/command-log-view.js` |
-| **FR-20** | **Kubernetes (read-only):** On refresh, the app shall run **`kubectl`** (binary `COLIMA_UI_KUBECTL_BIN`, default `kubectl`) to list **nodes** (`get nodes -o json`), **pods** (`get pods -A -o json`), **Istio Gateways** (`get gateway.networking.istio.io -A -o json`), and **Istio VirtualServices** (`get virtualservice.networking.istio.io -A -o json`), and render tables. Set **`COLIMA_UI_K8S_ENABLED=0`** to skip all four calls (empty tables, no errors from kubectl). Default is **enabled** (`1`). | Should | Implemented | IPC `kubernetes:get*`, `domain/kubernetes/kubernetes-operations.js`, `renderer/k8s-view.js`, `renderer/refresh.js` |
+| **FR-20** | **Kubernetes:** On refresh, the app shall run **`kubectl`** to list **nodes**, **pods** (`-A`), **services** (`get svc` with list scope: **From Settings** / effective `COLIMA_UI_K8S_SERVICES_NAMESPACE`, **All namespaces**, or **Specify…**), **Istio Gateways**, and **Istio VirtualServices** (`-o json`), and render tables. Disable **lists** via **`COLIMA_UI_K8S_ENABLED=0`** or Settings. **Pods:** context menu → **Shell** / **Tail logs** / **Stop pod** (`kubectl delete pod`, confirm) → refresh. **Services:** context menu → **Port-forward**, **Tail logs** (selector-based), **Stop service** (`kubectl delete service`, confirm) → refresh. | Should | Implemented | IPC `kubernetes:get*`, `pods:contextMenu`, `services:contextMenu`, `kubernetes:mutation`, `domain/kubernetes/kubernetes-operations.js`, `lib/k8s-identifiers.js`, `renderer/pods-context.js`, `renderer/services-context.js`, `renderer/k8s-view.js`, `renderer/refresh.js`, `index.html` |
+| **FR-21** | The user shall **view and edit** all supported **`COLIMA_UI_*`** tunables from a **Settings** view in the main area: values reflect **effective** config (env at launch plus saved overrides), with **Save** (persist to `user-settings.json`), **Reset to environment defaults**, and post-save **Refresh** + Colima Runtime form reload. | Should | Implemented | `lib/config-fields.js`, `lib/user-settings.js`, `lib/runtime-config.js`, `lib/settings-presenter.js`, IPC `settings:*`, `renderer/settings-view.js` |
 
 ### 3.1 Explicitly out of scope (POC)
 
 | ID | Requirement | Rationale |
 |----|-------------|-----------|
-| **FR-X-01** | **Mutating** **kubectl** (apply/delete), **Helm**, **istioctl**, or Istio addon installs from the UI | Read-only lists only; lab steps stay in **`workflow.md`** |
+| **FR-X-01** | **Broad** mutating **kubectl** (apply, bulk delete), **Helm**, **istioctl**, or Istio addon installs from the UI | Scoped exceptions: context-menu **delete pod** / **delete service** with confirmation; other lab steps stay in **`workflow.md`** |
 | **FR-X-02** | **Realtime** auto-refresh or file/socket watchers | User NFR: refresh-only POC |
 | **FR-X-03** | **Packaged** installers (DMG, MSI, auto-update) | Not requested for POC |
 | **FR-X-04** | ~~Fixed CPU/memory only; no UI for start resources~~ | **Deprecated** — superseded by **FR-04**, **FR-05**, and Runtime form + `lib/config.js` |
@@ -80,7 +81,7 @@ Developers running **Colima** and **Docker** locally want a **small desktop util
 | FR | Primary artifacts |
 |----|-------------------|
 | FR-01, FR-11 | `package.json`, `main.js`, `index.html` |
-| FR-02, FR-03, NFR-01, NFR-03 | `lib/cli.js`, `lib/config.js`, `domain/colima/colima-operations.js`, `domain/docker/docker-operations.js` |
+| FR-02, FR-03, NFR-01, NFR-03 | `lib/cli.js`, `lib/config.js`, `lib/runtime-config.js`, `domain/colima/colima-operations.js`, `domain/docker/docker-operations.js` |
 | FR-04–FR-06, FR-10 | `main.js` (`colima:*` IPC), `domain/colima/colima-operations.js`, `renderer/colima-actions.js`, `renderer/colima-view.js`, `index.html` |
 | FR-07, FR-08 | `renderer/refresh.js`, `renderer/colima-view.js`, `preload.js` |
 | FR-09, FR-13–FR-15 | `domain/docker/docker-operations.js`, `renderer/docker-view.js`, `renderer/refresh.js`, `index.html` |
@@ -89,13 +90,14 @@ Developers running **Colima** and **Docker** locally want a **small desktop util
 | FR-13 (images menu) | `main.js` `images:contextMenu`, `renderer/images-context.js` |
 | FR-14 (volumes menu) | `main.js` `volumes:contextMenu`, `renderer/volumes-context.js` |
 | FR-17 | `renderer/sidebar.js`, `renderer/app.js`, `index.html`, `styles.css` |
+| FR-21 | `lib/config-fields.js`, `lib/user-settings.js`, `lib/runtime-config.js`, `lib/settings-presenter.js`, `main.js`, `preload.js`, `renderer/settings-view.js`, `renderer/app.js` |
 | FR-18 | `domain/colima/colima-operations.js` `getTemplate`, `main.js`, `preload.js`, `renderer/colima-actions.js`, `lib/terminal-launch.js` |
 | FR-19 | `lib/command-log.js`, `lib/cli.js`, `main.js`, `preload.js`, `renderer/command-log-view.js`, `renderer/app.js` |
-| FR-20 | `domain/kubernetes/kubernetes-operations.js`, `main.js`, `preload.js`, `renderer/k8s-view.js`, `renderer/refresh.js`, `index.html` |
+| FR-20 | `domain/kubernetes/kubernetes-operations.js`, `lib/runtime-config.js`, `lib/k8s-identifiers.js`, `main.js`, `preload.js`, `renderer/k8s-view.js`, `renderer/pods-context.js`, `renderer/services-context.js`, `renderer/refresh.js`, `renderer/app.js`, `index.html` |
 | NFR-02 | `main.js`, `preload.js` |
 | NFR-05 | `README.md`, `docs/*`, `lib/config.js` |
 
-**Cross-cutting:** `docker:mutation` (main → renderer) after successful container/image/volume removal — `preload.js` `onDockerMutation`, `renderer/app.js`.
+**Cross-cutting:** `docker:mutation` (main → renderer) after successful container/image/volume removal — `preload.js` `onDockerMutation`, `renderer/app.js`. **`kubernetes:mutation`** after successful **`kubectl delete pod`** / **`kubectl delete service`** — `preload.js` `onKubernetesMutation`, `renderer/app.js`.
 
 ---
 

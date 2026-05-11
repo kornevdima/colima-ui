@@ -20,12 +20,18 @@ contextBridge.exposeInMainWorld("colimaUi", {
   kubernetesGetGateways: () => ipcRenderer.invoke("kubernetes:getGateways"),
   kubernetesGetVirtualServices: () =>
     ipcRenderer.invoke("kubernetes:getVirtualServices"),
+  kubernetesGetServices: (options) =>
+    ipcRenderer.invoke("kubernetes:getServices", options ?? {}),
   openContainerContextMenu: (payload) =>
     ipcRenderer.invoke("containers:contextMenu", payload ?? {}),
   openImageContextMenu: (payload) =>
     ipcRenderer.invoke("images:contextMenu", payload ?? {}),
   openVolumeContextMenu: (payload) =>
     ipcRenderer.invoke("volumes:contextMenu", payload ?? {}),
+  openPodContextMenu: (payload) =>
+    ipcRenderer.invoke("pods:contextMenu", payload ?? {}),
+  openServiceContextMenu: (payload) =>
+    ipcRenderer.invoke("services:contextMenu", payload ?? {}),
   commandLogGet: () => ipcRenderer.invoke("command-log:get"),
   commandLogClear: () => ipcRenderer.invoke("command-log:clear"),
   onCommandLogAppend: (callback) => {
@@ -52,8 +58,24 @@ contextBridge.exposeInMainWorld("colimaUi", {
     ipcRenderer.on(channel, handler);
     return () => ipcRenderer.removeListener(channel, handler);
   },
+  settingsGet: () => ipcRenderer.invoke("settings:get"),
+  settingsSet: (payload) => ipcRenderer.invoke("settings:set", payload ?? {}),
+  settingsReset: () => ipcRenderer.invoke("settings:reset"),
+
   onDockerMutation: (callback) => {
     const channel = "docker:mutation";
+    const handler = () => {
+      try {
+        callback();
+      } catch {
+        /* ignore */
+      }
+    };
+    ipcRenderer.on(channel, handler);
+    return () => ipcRenderer.removeListener(channel, handler);
+  },
+  onKubernetesMutation: (callback) => {
+    const channel = "kubernetes:mutation";
     const handler = () => {
       try {
         callback();

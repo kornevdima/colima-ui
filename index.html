@@ -31,7 +31,7 @@
             alt="Colima"
             decoding="async"
           />
-          <div>
+          <div class="sidebar-brand-copy">
             <div class="sidebar-title">Colima UI</div>
             <div class="sidebar-tagline">POC</div>
           </div>
@@ -175,6 +175,14 @@
               <button
                 type="button"
                 class="nav-item nav-item--sub"
+                id="nav-kubernetes-services"
+                data-nav="kubernetes-services"
+              >
+                Services
+              </button>
+              <button
+                type="button"
+                class="nav-item nav-item--sub"
                 id="nav-kubernetes-gateways"
                 data-nav="kubernetes-gateways"
               >
@@ -202,8 +210,18 @@
           </button>
           <button
             type="button"
+            id="nav-app-settings"
+            class="btn btn-block btn-muted"
+            data-nav="app-settings"
+            aria-label="Open settings"
+          >
+            Settings
+          </button>
+          <button
+            type="button"
             id="nav-app-logs"
             class="btn btn-block btn-muted"
+            data-nav="app-logs"
             aria-label="Open command log"
           >
             Logs
@@ -589,7 +607,12 @@
             <div class="panel-head">
               <h2 id="view-kubernetes-pods-heading">Kubernetes · Pods</h2>
             </div>
-            <p class="panel-hint"><code>kubectl get pods -A -o json</code> (all namespaces).</p>
+            <p class="panel-hint">
+              <code>kubectl get pods -A -o json</code> (all namespaces). Right-click a row for
+              <strong>Shell in Terminal</strong> (<code>kubectl exec -it … -n … -- /bin/sh</code>),
+              <strong>Tail logs</strong>, or <strong>Stop pod</strong> (<code>kubectl delete pod</code>, with
+              confirmation).
+            </p>
             <div class="docker-summary" id="k8s-pods-summary"></div>
             <div class="table-wrap">
               <table class="data-table" id="k8s-pods-table">
@@ -600,6 +623,67 @@
                     <th>Phase</th>
                     <th>Ready / restarts</th>
                     <th>Node</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="view-kubernetes-services"
+          class="view view--hidden"
+          aria-labelledby="view-kubernetes-services-heading"
+          hidden
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-kubernetes-services-heading">Kubernetes · Services</h2>
+            </div>
+            <p class="panel-hint">
+              <code>kubectl get svc</code> scope is chosen below. <strong>From Settings</strong> uses
+              <code>COLIMA_UI_K8S_SERVICES_NAMESPACE</code> (and saved Settings overrides). Right-click a
+              row for <strong>Port-forward</strong> per TCP port, <strong>Tail logs</strong> for pods
+              matched by the Service’s selector (multi-pod friendly, e.g.
+              <code>kubectl logs -f -n default -l app=web --prefix=true --all-containers=true</code>), or
+              <strong>Stop service</strong> (<code>kubectl delete service</code>, with confirmation).
+            </p>
+            <div class="k8s-services-toolbar field-stacked field-stacked--spaced">
+              <span class="label">List namespace</span>
+              <div class="k8s-services-toolbar-row">
+                <select id="k8s-services-ns-mode" class="input-select k8s-services-ns-mode" aria-label="Services list namespace mode">
+                  <option value="settings">From Settings</option>
+                  <option value="all">All namespaces</option>
+                  <option value="custom">Specify…</option>
+                </select>
+                <input
+                  type="text"
+                  id="k8s-services-ns-custom"
+                  class="input-text k8s-services-ns-custom"
+                  placeholder="e.g. default, istio-system"
+                  disabled
+                  spellcheck="false"
+                  autocomplete="off"
+                  aria-label="Custom namespace for services list"
+                />
+              </div>
+              <p class="field-hint">
+                Choose a mode, set a custom name if needed, then <strong>Refresh</strong>. This only changes
+                the list query; Settings still defines the default for <em>From Settings</em>.
+              </p>
+            </div>
+            <div class="docker-summary" id="k8s-services-summary"></div>
+            <div class="table-wrap">
+              <table class="data-table" id="k8s-services-table">
+                <thead>
+                  <tr>
+                    <th>Namespace</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Cluster IP</th>
+                    <th>Ports</th>
+                    <th>External / LB</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -669,6 +753,35 @@
         </section>
 
         <section
+          id="view-app-settings"
+          class="view view--hidden"
+          aria-labelledby="view-app-settings-heading"
+          hidden
+        >
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="view-app-settings-heading">Settings</h2>
+              <div class="actions settings-panel-actions">
+                <button type="button" class="btn btn-muted" id="settings-reset-defaults">
+                  Reset to environment defaults
+                </button>
+                <button type="button" class="btn primary" id="settings-save-main">
+                  Save
+                </button>
+              </div>
+            </div>
+            <p class="panel-hint">
+              These options mirror <code>COLIMA_UI_*</code> environment variables loaded when the app
+              started. Saved preferences override env for this install only (see file path below). Use
+              <strong>Refresh</strong> after saving so lists and timeouts match; Colima start defaults on
+              the Runtime page reload when you save here.
+            </p>
+            <p class="field-hint settings-file-line" id="settings-persist-path"></p>
+            <div id="settings-sections-root" class="settings-sections"></div>
+          </div>
+        </section>
+
+        <section
           id="view-app-logs"
           class="view view--hidden"
           aria-labelledby="view-app-logs-heading"
@@ -705,6 +818,7 @@
         </section>
       </div>
     </div>
+
     <script type="module" src="renderer/app.js"></script>
   </body>
 </html>

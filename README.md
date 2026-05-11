@@ -56,6 +56,7 @@ Runtime behaviour is driven by **environment variables** (no config file in the 
 | `COLIMA_UI_K8S_CPU` | `4` | CPU flag for **Start + Kubernetes** |
 | `COLIMA_UI_K8S_MEMORY_GIB` | `8` | `--memory` (GiB) for that preset |
 | `COLIMA_UI_K8S_ENABLED` | `1` | Set to `0` to skip all `kubectl` list calls on **Refresh** (no cluster / docker-only) |
+| `COLIMA_UI_K8S_SERVICES_NAMESPACE` | `istio-system` | `kubectl get svc -n <value>`; set to **empty** (`COLIMA_UI_K8S_SERVICES_NAMESPACE=`) for `kubectl get svc -A` |
 | `COLIMA_UI_LOG_LEVEL` | `info` | `error` / `warn` / `info` / `debug` |
 | `COLIMA_UI_TERMINAL_LINUX` | *(auto)* | Optional Linux terminal binary; if unset, tries **gnome-terminal** then **x-terminal-emulator**, else runs **bash** in background (no window). When set, invoked as `TERM -e bash -lc '<docker cmd>'`. |
 
@@ -67,14 +68,14 @@ Domain layout: **`domain/colima`**, **`domain/docker`**, **`domain/kubernetes`**
 
 | UI control | Equivalent CLI (see `workflow.md`) |
 |------------|--------------------------------------|
-| **Refresh** | `colima list -j`, `colima status -j`, `colima template --print` (+ file read), `docker info` / `ps` / `image ls` / `volume ls` / `network ls` (with per-tab filters where set), versions; unless `COLIMA_UI_K8S_ENABLED=0`, also `kubectl get nodes`, `kubectl get pods -A`, `kubectl get gateway.networking.istio.io -A`, `kubectl get virtualservice.networking.istio.io -A` |
+| **Refresh** | `colima list -j`, `colima status -j`, `colima template --print` (+ file read), `docker info` / `ps` / `image ls` / `volume ls` / `network ls` (with per-tab filters where set), versions; unless `COLIMA_UI_K8S_ENABLED=0`, also `kubectl get nodes`, `kubectl get pods -A`, `kubectl get svc -n …` (default `istio-system`, or `-A` if namespace env is empty), `kubectl get gateway.networking.istio.io -A`, `kubectl get virtualservice.networking.istio.io -A` |
 | **Start** | `colima start -p <profile>` |
 | **Start + Kubernetes** | `colima start --cpu 4 --memory 8 --kubernetes` (+ `-p <profile>` if not default) — same idea as *§1. Start Colima with Kubernetes* |
 | **Stop** | `colima stop` — same idea as *Cleanup* `colima stop` |
 
 **Profile** maps to Colima’s `-p` / instance name from `colima list`.
 
-**Not implemented in the POC** (still do these from the terminal per `workflow.md`): mutating `kubectl` / **Helm** / **istioctl**, port-forwards, Istio addon installs, service curls, cleanup beyond Colima stop. Read-only `kubectl` lists are available under **Kubernetes** in the app.
+**Not implemented in the POC** (still do these from the terminal per `workflow.md`): broad mutating `kubectl` (**apply**, bulk ops), **Helm** / **istioctl**, Istio addon installs, and similar. Under **Kubernetes**, the app lists resources and offers context-menu **terminal** actions (exec, logs, port-forward) plus confirmed **delete pod** / **delete service**; everything else stays in `workflow.md`.
 
 ---
 
